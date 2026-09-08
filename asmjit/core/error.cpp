@@ -70,6 +70,7 @@ ASMJIT_FAVOR_SIZE const char* stringify_error(Error err) noexcept {
     "InvalidDisplacement\0"
     "InvalidSegment\0"
     "InvalidImmediate\0"
+    "InvalidPtrAuth\0"
     "InvalidOperandSize\0"
     "AmbiguousOperandSize\0"
     "OperandSizeMismatch\0"

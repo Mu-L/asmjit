@@ -107,6 +107,15 @@ ASMJIT_FAVOR_SIZE Error FuncFrame::init(const FuncDetail& func) noexcept {
   reset();
 
   _arch = arch;
+
+  if (func.call_conv().strategy() == CallConvStrategy::kAArch64Apple) {
+    _attributes |= FuncAttributes::kAppleABI;
+  }
+
+  if (func.call_conv().has_flag(CallConvFlags::kPtrAuth)) {
+    _attributes |= FuncAttributes::kPtrAuth;
+  }
+
   _sp_reg_id = uint8_t(arch_traits.sp_reg_id());
   _sa_reg_id = uint8_t(Reg::kIdBad);
 
@@ -173,7 +182,8 @@ ASMJIT_FAVOR_SIZE Error FuncFrame::finalize() noexcept {
     _dirty_regs[RegGroup::kGp] |= axl::bit_mask<RegMask>(kFp);
   }
 
-  // Currently required by ARM, if this works differently across platforms we would have to generalize in CallConv.
+  // Currently required by architectures that use link regs, if this works differently across platforms we would have
+  // to further generalize it in CallConv.
   if ((has_fp || has_func_calls()) && kLr != Reg::kIdBad) {
     _dirty_regs[RegGroup::kGp] |= axl::bit_mask<RegMask>(kLr);
   }
@@ -199,31 +209,43 @@ ASMJIT_FAVOR_SIZE Error FuncFrame::finalize() noexcept {
   _sa_reg_id = uint8_t(sa_reg_id);
 
   // Setup stack size used to save preserved registers.
-  uint32_t save_restore_sizes[2] {};
-  for (RegGroup group : axl::enumerate(RegGroup::kMaxVirt)) {
-    save_restore_sizes[size_t(!arch_traits.has_inst_push_pop(group))]
-      += axl::align_up(axl::popcnt(saved_regs(group)) * save_restore_reg_size(group), save_restore_alignment(group));
+  if (_arch == Arch::kAArch64 && has_attribute(FuncAttributes::kAppleABI)) {
+    RegMask gp_pairs = axl::pair_bits(saved_regs(RegGroup::kGp) << 1u); // ABI pairs {19,20}, {21,22}, {23,24}, {25,26}, {27,28}
+    RegMask vec_pairs = axl::pair_bits(saved_regs(RegGroup::kVec));     // ABI pairs {8,9}, {10,11}, {12,13}, {14,15}
+
+    _push_pop_save_size = uint16_t(
+      axl::align_up(axl::popcnt(gp_pairs) * save_restore_reg_size(RegGroup::kGp), save_restore_alignment(RegGroup::kGp)) +
+      axl::align_up(axl::popcnt(vec_pairs) * save_restore_reg_size(RegGroup::kVec), save_restore_alignment(RegGroup::kVec)));
+  }
+  else {
+    uint32_t save_restore_sizes[2] {};
+
+    for (RegGroup group : axl::enumerate(RegGroup::kMaxVirt)) {
+      size_t index = size_t(!arch_traits.has_inst_push_pop(group));
+      RegMask regs = saved_regs(group);
+      save_restore_sizes[index] += axl::align_up(axl::popcnt(regs) * save_restore_reg_size(group), save_restore_alignment(group));
+    }
+
+    _push_pop_save_size  = uint16_t(save_restore_sizes[0]);
+    _extra_reg_save_size = uint16_t(save_restore_sizes[1]);
   }
 
-  _push_pop_save_size  = uint16_t(save_restore_sizes[0]);
-  _extra_reg_save_size = uint16_t(save_restore_sizes[1]);
+  uint32_t v = 0;                             // The beginning of the stack frame relative to SP after prolog.
+  v += call_stack_size();                     // Count 'call_stack_size'      <- This is used to call functions.
+  v  = axl::align_up(v, stack_alignment);     // Align to function's stack alignment.
 
-  uint32_t v = 0;                            // The beginning of the stack frame relative to SP after prolog.
-  v += call_stack_size();                      // Count 'call_stack_size'      <- This is used to call functions.
-  v  = axl::align_up(v, stack_alignment);  // Align to function's stack alignment.
-
-  _local_stack_offset = v;                     // Store 'local_stack_offset'   <- Function's local stack starts here.
-  v += local_stack_size();                     // Count 'local_stack_size'     <- Function's local stack ends here.
+  _local_stack_offset = v;                    // Store 'local_stack_offset'   <- Function's local stack starts here.
+  v += local_stack_size();                    // Count 'local_stack_size'     <- Function's local stack ends here.
 
   // If the function's stack must be aligned, calculate the alignment necessary to store vector registers, and set
   // `FuncAttributes::kAlignedVecSR` to inform PEI that it can use instructions that perform aligned stores/loads.
   if (stack_alignment >= vector_size && _extra_reg_save_size) {
     add_attributes(FuncAttributes::kAlignedVecSR);
-    v = axl::align_up(v, vector_size);     // Align 'extra_reg_save_offset'.
+    v = axl::align_up(v, vector_size);        // Align 'extra_reg_save_offset'.
   }
 
-  _extra_reg_save_offset = v;                   // Store 'extra_reg_save_offset' <- Non-GP save/restore starts here.
-  v += _extra_reg_save_size;                    // Count 'extra_reg_save_size'   <- Non-GP save/restore ends here.
+  _extra_reg_save_offset = v;                 // Store 'extra_reg_save_offset' <- Non-GP save/restore starts here.
+  v += _extra_reg_save_size;                  // Count 'extra_reg_save_size'   <- Non-GP save/restore ends here.
 
   // Calculate if dynamic alignment (DA) slot (stored as offset relative to SP) is required and its offset.
   if (has_da && !has_fp) {
@@ -272,7 +294,7 @@ ASMJIT_FAVOR_SIZE Error FuncFrame::finalize() noexcept {
   _sa_offset_from_sp = has_da ? FuncFrame::kTagInvalidOffset : v;
 
   // Calculate where the function arguments start relative to FP or user-provided register.
-  _sa_offset_from_sa = has_fp ? return_address_size + register_size      // Return address + frame pointer.
+  _sa_offset_from_sa = has_fp ? return_address_size + register_size    // Return address + frame pointer.
                           : return_address_size + _push_pop_save_size; // Return address + all push/pop regs.
 
   return Error::kOk;

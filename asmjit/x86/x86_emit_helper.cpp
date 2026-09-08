@@ -680,25 +680,25 @@ ASMJIT_FAVOR_SIZE Error EmitHelper::emit_epilog(const FuncFrame& frame) {
   return Error::kOk;
 }
 
-static Error ASMJIT_CDECL Emitter_emitProlog(BaseEmitter* emitter, const FuncFrame& frame) {
+static Error ASMJIT_CDECL Emitter_emit_prolog(BaseEmitter* emitter, const FuncFrame& frame) {
   EmitHelper emit_helper(emitter, frame.is_avx_enabled(), frame.is_avx512_enabled());
   return emit_helper.emit_prolog(frame);
 }
 
-static Error ASMJIT_CDECL Emitter_emitEpilog(BaseEmitter* emitter, const FuncFrame& frame) {
+static Error ASMJIT_CDECL Emitter_emit_epilog(BaseEmitter* emitter, const FuncFrame& frame) {
   EmitHelper emit_helper(emitter, frame.is_avx_enabled(), frame.is_avx512_enabled());
   return emit_helper.emit_epilog(frame);
 }
 
-static Error ASMJIT_CDECL Emitter_emitArgsAssignment(BaseEmitter* emitter, const FuncFrame& frame, const FuncArgsAssignment& args) {
+static Error ASMJIT_CDECL Emitter_emit_args_assignment(BaseEmitter* emitter, const FuncFrame& frame, const FuncArgsAssignment& args) {
   EmitHelper emit_helper(emitter, frame.is_avx_enabled(), frame.is_avx512_enabled());
   return emit_helper.emit_args_assignment(frame, args);
 }
 
 void init_emitter_funcs(BaseEmitter* emitter) noexcept {
-  emitter->_funcs.emit_prolog = Emitter_emitProlog;
-  emitter->_funcs.emit_epilog = Emitter_emitEpilog;
-  emitter->_funcs.emit_args_assignment = Emitter_emitArgsAssignment;
+  emitter->_funcs.emit_prolog = Emitter_emit_prolog;
+  emitter->_funcs.emit_epilog = Emitter_emit_epilog;
+  emitter->_funcs.emit_args_assignment = Emitter_emit_args_assignment;
 
 #ifndef ASMJIT_NO_LOGGING
   emitter->_funcs.format_instruction = FormatterInternal::format_instruction;

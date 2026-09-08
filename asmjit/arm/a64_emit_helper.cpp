@@ -243,6 +243,13 @@ struct LoadStoreInstructions {
   InstId pair_inst_id;
 };
 
+struct ABIRegPair {
+  uint8_t first, second;
+};
+
+static const ABIRegPair darwin_gp_pairs[] = { {19, 20}, {21, 22}, {23, 24}, {25, 26}, {27, 28} };
+static const ABIRegPair darwin_vec_pairs[] = { {8, 9}, {10, 11}, {12, 13}, {14, 15} };
+
 struct PrologEpilogInfo {
   struct RegPair {
     uint8_t ids[2];
@@ -254,10 +261,25 @@ struct PrologEpilogInfo {
     uint32_t pair_count;
   };
 
+  InstId pauth_entry;
+  InstId pauth_ret;
+
   axl::InplaceArray<GroupData, 2> groups;
   uint32_t size_total;
 
   Error init(const FuncFrame& frame) noexcept {
+    pauth_entry = Inst::kIdNone;
+    pauth_ret = Inst::kIdNone;
+
+    bool has_apple_pauth = frame.has_attribute(FuncAttributes::kAppleABI) &&
+                           frame.has_attribute(FuncAttributes::kPtrAuth) &&
+                           frame.has_func_calls();
+
+    if (has_apple_pauth) {
+      pauth_entry = Inst::kIdPacibsp;
+      pauth_ret = Inst::kIdRetab;
+    }
+
     uint32_t offset = 0;
 
     for (RegGroup group : axl::enumerate(RegGroup::kGp, RegGroup::kVec)) {
@@ -270,17 +292,37 @@ struct PrologEpilogInfo {
       uint32_t slot_size = frame.save_restore_reg_size(group);
       RegMask saved_regs = frame.saved_regs(group);
 
-      if (group == RegGroup::kGp && frame.has_preserved_fp()) {
-        // Must be at the beginning of the push/pop sequence.
-        ASMJIT_ASSERT(pair_count == 0);
+      if (group == RegGroup::kGp) {
+        if (frame.has_preserved_fp() || (frame.dirty_regs(RegGroup::kGp) & axl::bit_mask<RegMask>(Gp::kIdLr, Gp::kIdFp)) != 0u) {
+          // Must be at the beginning of the push/pop sequence.
+          ASMJIT_ASSERT(pair_count == 0);
 
-        pairs[0].offset = uint16_t(offset);
-        pairs[0].ids[0] = Gp::kIdFp;
-        pairs[0].ids[1] = Gp::kIdLr;
-        offset += slot_size * 2;
-        pair_count++;
+          pairs[0].offset = uint16_t(offset);
+          pairs[0].ids[0] = Gp::kIdFp;
+          pairs[0].ids[1] = Gp::kIdLr;
 
-        saved_regs &= ~axl::bit_mask<RegMask>(Gp::kIdFp, Gp::kIdLr);
+          offset += slot_size * 2;
+          pair_count++;
+          saved_regs &= ~axl::bit_mask<RegMask>(Gp::kIdFp, Gp::kIdLr);
+        }
+      }
+
+      if (group <= RegGroup::kVec && frame.has_attribute(FuncAttributes::kAppleABI)) {
+        const ABIRegPair* abi_pairs = (group == RegGroup::kGp) ? darwin_gp_pairs : darwin_vec_pairs;
+        size_t abi_pair_count = (group == RegGroup::kGp) ? ASMJIT_ARRAY_SIZE(darwin_gp_pairs) : ASMJIT_ARRAY_SIZE(darwin_vec_pairs);
+
+        for (size_t i = 0; i < abi_pair_count; i++) {
+          RegMask mask = axl::bit_mask<RegMask>(abi_pairs[i].first, abi_pairs[i].second);
+          if (saved_regs & mask) {
+            pairs[pair_count].offset = uint16_t(offset);
+            pairs[pair_count].ids[0] = abi_pairs[i].first;
+            pairs[pair_count].ids[1] = abi_pairs[i].second;
+
+            offset += slot_size * 2;
+            pair_count++;
+            saved_regs &= ~mask;
+          }
+        }
       }
 
       axl::BitWordIterator<uint32_t> it(saved_regs);
@@ -326,6 +368,10 @@ ASMJIT_FAVOR_SIZE Error EmitHelper::emit_prolog(const FuncFrame& frame) {
   // Emit: 'bti {jc}' (indirect branch protection).
   if (frame.has_indirect_branch_protection()) {
     ASMJIT_PROPAGATE(emitter->bti(Predicate::BTI::kJC));
+  }
+
+  if (pei.pauth_entry != Inst::kIdNone) {
+    ASMJIT_PROPAGATE(emitter->emit(pei.pauth_entry));
   }
 
   uint32_t adjust_initial_offset = pei.size_total;
@@ -445,30 +491,35 @@ ASMJIT_FAVOR_SIZE Error EmitHelper::emit_epilog(const FuncFrame& frame) {
     }
   }
 
-  ASMJIT_PROPAGATE(emitter->ret(x30));
+  if (pei.pauth_ret != Inst::kIdNone) {
+    ASMJIT_PROPAGATE(emitter->emit(pei.pauth_ret));
+  }
+  else {
+    ASMJIT_PROPAGATE(emitter->ret(x30));
+  }
 
   return Error::kOk;
 }
 
-static Error ASMJIT_CDECL Emitter_emitProlog(BaseEmitter* emitter, const FuncFrame& frame) {
+static Error ASMJIT_CDECL Emitter_emit_prolog(BaseEmitter* emitter, const FuncFrame& frame) {
   EmitHelper emit_helper(emitter);
   return emit_helper.emit_prolog(frame);
 }
 
-static Error ASMJIT_CDECL Emitter_emitEpilog(BaseEmitter* emitter, const FuncFrame& frame) {
+static Error ASMJIT_CDECL Emitter_emit_epilog(BaseEmitter* emitter, const FuncFrame& frame) {
   EmitHelper emit_helper(emitter);
   return emit_helper.emit_epilog(frame);
 }
 
-static Error ASMJIT_CDECL Emitter_emitArgsAssignment(BaseEmitter* emitter, const FuncFrame& frame, const FuncArgsAssignment& args) {
+static Error ASMJIT_CDECL Emitter_emit_args_assignment(BaseEmitter* emitter, const FuncFrame& frame, const FuncArgsAssignment& args) {
   EmitHelper emit_helper(emitter);
   return emit_helper.emit_args_assignment(frame, args);
 }
 
 void init_emitter_funcs(BaseEmitter* emitter) {
-  emitter->_funcs.emit_prolog = Emitter_emitProlog;
-  emitter->_funcs.emit_epilog = Emitter_emitEpilog;
-  emitter->_funcs.emit_args_assignment = Emitter_emitArgsAssignment;
+  emitter->_funcs.emit_prolog = Emitter_emit_prolog;
+  emitter->_funcs.emit_epilog = Emitter_emit_epilog;
+  emitter->_funcs.emit_args_assignment = Emitter_emit_args_assignment;
 
 #ifndef ASMJIT_NO_LOGGING
   emitter->_funcs.format_instruction = FormatterInternal::format_instruction;

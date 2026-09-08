@@ -8,6 +8,7 @@
 
 #include <asmjit/core/cpu_info.h>
 #include <asmjit/core/jit_runtime.h>
+#include <asmjit/core/pauth_utils_p.h>
 
 ASMJIT_BEGIN_NAMESPACE
 
@@ -73,12 +74,12 @@ Error JitRuntime::_add(void** dst, CodeHolder* code) noexcept {
     return Error::kOk;
   });
 
-  *dst = span.rx();
+  *dst = PAuthUtils::sign_c_func_ptr_inline(span.rx());
   return Error::kOk;
 }
 
 Error JitRuntime::_release(void* p) noexcept {
-  return _allocator.release(p);
+  return _allocator.release(PAuthUtils::strip_c_func_ptr_inline(p));
 }
 
 ASMJIT_END_NAMESPACE

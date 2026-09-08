@@ -113,6 +113,8 @@ jobs:
           - { title: "macos"                 , host: "macos-26-intel"       , arch: "x64"    , cc: "clang"   , conf: "Release", defs: "ASMJIT_TEST=1" }
           - { title: "macos"                 , host: "macos-26"             , arch: "arm64"  , cc: "clang"   , conf: "Debug"  , defs: "ASMJIT_TEST=1" }
           - { title: "macos"                 , host: "macos-26"             , arch: "arm64"  , cc: "clang"   , conf: "Release", defs: "ASMJIT_TEST=1" }
+          - { title: "macos"                 , host: "macos-26"             , arch: "arm64e" , cc: "clang"   , conf: "Debug"  , defs: "ASMJIT_TEST=1" }
+          - { title: "macos"                 , host: "macos-26"             , arch: "arm64e" , cc: "clang"   , conf: "Release", defs: "ASMJIT_TEST=1" }
           - { title: "windows"               , host: "windows-2025-vs2026"  , arch: "x86"    , cc: "vs2026"  , conf: "Debug"  , defs: "ASMJIT_TEST=1" }
           - { title: "windows"               , host: "windows-2025-vs2026"  , arch: "x86"    , cc: "vs2026"  , conf: "Release", defs: "ASMJIT_TEST=1" }
           - { title: "windows"               , host: "windows-2025-vs2026"  , arch: "x64"    , cc: "vs2026"  , conf: "Debug"  , defs: "ASMJIT_TEST=1" }

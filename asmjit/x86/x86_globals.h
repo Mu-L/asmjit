@@ -2121,9 +2121,8 @@ static ASMJIT_INLINE_CONSTEXPR VReduceImm vreduce_imm(VReduceImm flags, uint32_t
 
 //! A predicate that can be used as an immediate value with VPTERNLOG[D|Q] instruction.
 //!
-//! There are 3 inputs to the instruction (\ref kA, \ref kB, \ref kC). Ternary logic can define any combination
-//! that would be performed on these 3 inputs to get the desired output - any combination of AND, OR, XOR, NOT
-//! is possible.
+//! There are 3 inputs to the instruction (`kA`, `kB`, `kC`). Ternary logic can define any combination that would
+//! be performed on these 3 inputs to get the desired output - any combination of AND, OR, XOR, NOT is possible.
 //!
 //! \sa \ref tlog_from_bits and \ref tlog_if_else
 enum class TLogImm : uint8_t {

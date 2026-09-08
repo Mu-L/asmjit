@@ -82,7 +82,7 @@ enum class JitAllocatorOptions : uint32_t {
   //! Forces \ref JitAllocator to always align block size to be at least as big as a large page, if large pages are
   //! enabled. This option does nothing if large pages are disabled.
   //!
-  //! \remarks If \ref kUseLargePages option is used, the allocator would prefer large pages only when allocating a
+  //! \remarks If `kUseLargePages` option is used, the allocator would prefer large pages only when allocating a
   //! block that has a sufficient size. Usually the allocator first allocates smaller block and when more requests
   //! come it will start increasing the block size of next allocations. This option makes it sure that even the first
   //! allocation would be the same as a minimum large page when large pages are enabled and can be allocated.

@@ -2291,6 +2291,25 @@ Error Assembler::_emit(InstId inst_id, const Operand_& o0, const Operand_& o1, c
       break;
     }
 
+    case InstDB::kEncodingBaseBranchRegAuth: {
+      const InstDB::EncodingData::BaseBranchRegAuth& op_data = InstDB::EncodingData::baseBranchRegAuth[encoding_index];
+
+      if (isign4 == ENC_OPS2(Reg, Reg)) {
+        if (!o0.as<Reg>().is_gp64() || !o1.as<Reg>().is_gp64())
+          goto InvalidInstruction;
+
+        if (!check_gp_id(o0, kZR))
+          goto InvalidPhysId;
+
+        opcode.reset(op_data.opcode);
+        opcode.add_reg(o0, 5);
+        opcode.add_reg(o1, 0);
+        goto EmitOp;
+      }
+
+      break;
+    }
+
     case InstDB::kEncodingBaseBranchRel: {
       const InstDB::EncodingData::BaseBranchRel& op_data = InstDB::EncodingData::baseBranchRel[encoding_index];
 

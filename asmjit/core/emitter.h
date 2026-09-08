@@ -156,7 +156,7 @@ enum class DiagnosticOptions : uint32_t {
   //! Perform strict validation in \ref BaseBuilder::emit() and \ref BaseCompiler::emit() implementations.
   //!
   //! This flag ensures that each instruction is checked before an \ref InstNode representing the instruction is
-  //! created by \ref BaseBuilder or \ref BaseCompiler. This option could be more useful than \ref kValidateAssembler
+  //! created by \ref BaseBuilder or \ref BaseCompiler. This option could be more useful than `kValidateAssembler`
   //! in cases in which there is an invalid instruction passed to an assembler, which was invalid much earlier, most
   //! likely when such instruction was passed to Builder/Compiler.
   //!

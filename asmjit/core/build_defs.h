@@ -16,7 +16,7 @@
 #define ASMJIT_LIBRARY_MAKE_VERSION(major, minor, patch) ((major << 16) | (minor << 8) | (patch))
 
 //! AsmJit library version, see \ref ASMJIT_LIBRARY_MAKE_VERSION for a version format reference.
-#define ASMJIT_LIBRARY_VERSION ASMJIT_LIBRARY_MAKE_VERSION(1, 22, 0)
+#define ASMJIT_LIBRARY_VERSION ASMJIT_LIBRARY_MAKE_VERSION(1, 23, 0)
 
 //! \def ASMJIT_ABI_NAMESPACE
 //!
@@ -27,7 +27,7 @@
 //! AsmJit default, which makes it possible to use multiple AsmJit libraries within a single project, totally
 //! controlled by users. This is useful especially in cases in which some of such library comes from third party.
 #if !defined(ASMJIT_ABI_NAMESPACE)
-  #define ASMJIT_ABI_NAMESPACE v1_22
+  #define ASMJIT_ABI_NAMESPACE v1_23
 #endif // !ASMJIT_ABI_NAMESPACE
 
 //! \}
@@ -243,7 +243,7 @@
   //! Defined when AsmJit is built with the target architecture backend.
   //!
   //! For example if AsmJit is building for x86 or x86_64 architectures and `ASMJIT_NO_X86` is not defined,
-  //! it would define `ASMJIT_HAS_HOST_BACKEND` when `<asmjit/code.h>` or ``<asmjit/host.h>` is included.
+  //! it would define `ASMJIT_HAS_HOST_BACKEND` when `<asmjit/code.h>` or `<asmjit/host.h>` is included.
   #define ASMJIT_HAS_HOST_BACKEND __detected_at_runtime__
 
 #else

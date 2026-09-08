@@ -1952,8 +1952,8 @@ namespace asmjit {
 //! ### Overview
 //!
 //! This functionality is primarily intended for AsmJit's internal use, but is exposed to users since it may be used
-//! in public headers as well. \ref Arena and arena-backed containers are used by many AsmJit classes, which are public,
-//! and AsmJit doesn't try to hide the use.
+//! in public headers as well. \ref axl::Arena and arena-backed containers are used by many AsmJit classes, which are
+//! public, and AsmJit doesn't try to hide the use.
 //!
 //! The arena allocator is used for most allocations within AsmJit. It is optimized for fast allocation of small objects,
 //! avoiding the overhead of `malloc()`. Memory is managed in large blocks that are split into smaller chunks, reducing
@@ -1961,7 +1961,7 @@ namespace asmjit {
 //!
 //! Releasing an arena allocator invalidates memory it holds, allowing efficient cleanup without per-object destruction.
 //! Long-lived objects typically reset their data in the destructor or via `reset()` for allocation reuse. All AsmJit
-//! containers use \ref Arena allocator.
+//! containers use \ref axl::Arena allocator.
 //!
 //! \section string_utilities String Utilities
 //!
@@ -1975,22 +1975,23 @@ namespace asmjit {
 //!
 //! \section arena_allocators Arena Allocators
 //!
-//!   - \ref Arena - Arena memory allocator that quickly allocates the requested memory from larger chunks and then
-//!     frees everything at once. AsmJit uses Arena allocators almost everywhere as almost everything is short-lived.
+//!   - \ref axl::Arena - Arena memory allocator that quickly allocates the requested memory from larger chunks and
+//!     then frees everything at once. AsmJit uses Arena allocators almost everywhere as almost everything is
+//!     short-lived.
 //!
 //! \section arena_containers Arena-Allocated Containers
 //!
-//!   - \ref ArenaString - Arena allocated string.
-//!   - \ref ArenaHash   - Arena allocated hash table.
-//!   - \ref ArenaTree   - Arena allocated red-black tree.
-//!   - \ref ArenaList   - Arena allocated double-linked list.
-//!   - \ref ArenaVector - Arena allocated vector.
+//!   - \ref axl::ArenaString - Arena allocated string.
+//!   - \ref axl::ArenaHash   - Arena allocated hash table.
+//!   - \ref axl::ArenaTree   - Arena allocated red-black tree.
+//!   - \ref axl::ArenaList   - Arena allocated double-linked list.
+//!   - \ref axl::ArenaVector - Arena allocated vector.
 //!
 //! \section using_arena_containers Using Arena-Allocated Containers
 //!
-//! The most common data structure exposed by AsmJit is \ref ArenaVector. It's very similar to `std::vector`, but the
-//! implementation doesn't use exceptions and uses the mentioned \ref Arena allocator for increased performance and
-//! decreased memory footprint. You don't have to worry about allocations as you should not need to add items to
+//! The most common data structure exposed by AsmJit is \ref axl::ArenaVector. It's very similar to `std::vector`, but
+//! the implementation doesn't use exceptions and uses the mentioned \ref axl::Arena allocator for increased performance
+//! and decreased memory footprint. You don't have to worry about allocations as you should not need to add items to
 //! AsmJit's data structures directly as there should be API for all required operations.
 //!
 //! Most of the time, AsmJit returns a non-owning Span instead of a reference to the allocator when it returns an array
@@ -2012,8 +2013,8 @@ namespace asmjit {
 //! ```
 //!
 //! \ref Span has overloaded array access operator to make it possible to access its elements through operator[].
-//! Some standard functions like \ref ArenaVector::is_empty(), \ref ArenaVector::size(), and \ref ArenaVector::data() are
-//! provided as well. Vectors are also iterable through a range-based for loop:
+//! Some standard functions like \ref axl::ArenaVector::is_empty(), \ref axl::ArenaVector::size(), and
+//! \ref axl::ArenaVector::data() are provided as well. Vectors are also iterable through a range-based for loop:
 //!
 //! ```
 //! using namespace asmjit;
@@ -2035,41 +2036,40 @@ namespace asmjit {
 //! footprint of such containers as AsmJit tooling, especially Compiler's register allocation, may use many instances
 //! of such containers to perform code analysis and register allocation.
 //!
-//! For example to append an item into an \ref ArenaVector it's required to pass the allocator as the first argument,
-//! so it can be used in case that the vector needs to grow. Such function also returns an error, which must be
-//! propagated to the caller.
+//! For example to append an item into an \ref axl::ArenaVector it's required to pass the allocator as the first
+//! argument, so it can be used in case that the vector needs to grow. Such function also returns an error, which must
+//! be propagated to the caller.
 //!
 //! ```
 //! using namespace asmjit;
 //!
-//! Error example(Arena& arena) {
-//!   ArenaVector<int> vector;
+//! Error example(axl::Arena& arena) {
+//!   axl::ArenaVector<int> vector;
 //!
-//!   // Unfortunately, arena must be provided to all functions that mutate
-//!   // the vector. However, AsmJit users should never need to do this as all
-//!   // manipulation should be done through public API, which takes care of
-//!   // this.
+//!   // Unfortunately, arena must be provided to all functions that mutate the
+//!   // vector. However, AsmJit users should never need to do this as all
+//!   // manipulation should be done through public API, which takes care of this.
 //!   for (int i = 0; i < 100; i++) {
 //!     ASMJIT_PROPAGATE(vector.append(arena, i));
 //!   }
 //!
-//!   // By default vector's destructor doesn't release anything as it knows
-//!   // that its content is allocated by Arena. However, \ref ArenaVector::release
+//!   // By default vector's destructor doesn't release anything as it knows that
+//!   // its content is allocated by Arena. However, \ref axl::ArenaVector::release
 //!   // can be used to explicitly release the vector data back to the allocator if
 //!   // necessary
 //!   vector.release(arena);
 //! }
 //! ```
 //!
-//! Containers like \ref ArenaVector also provide a functionality to reserve a certain number of items before any items
-//! are added to it. This approach is used internally in most places as it allows to prepare space for data that will
-//! be added to some container before the data itself was created.
+//! Containers like \ref axl::ArenaVector also provide a functionality to reserve a certain number of items before any
+//! items are added to it. This approach is used internally in most places as it allows to prepare space for data that
+//! will be added to some container before the data itself was created.
 //!
 //! ```
 //! using namespace asmjit;
 //!
-//! Error example(Arena& arena) {
-//!   ArenaVector<int> vector;
+//! Error example(axl::Arena& arena) {
+//!   axl::ArenaVector<int> vector;
 //!
 //!   ASMJIT_PROPAGATE(vector.reserve_additional(arena, 100));
 //!   for (int i = 0; i < 100; i++) {
@@ -2311,6 +2311,7 @@ namespace asmjit {
 #include <asmjit/core/logger.h>
 #include <asmjit/core/operand.h>
 #include <asmjit/core/os_utils.h>
+#include <asmjit/core/pauth.h>
 #include <asmjit/core/string.h>
 #include <asmjit/core/target.h>
 #include <asmjit/core/type.h>

@@ -660,6 +660,7 @@ public:
       kPAN2,                     //!< CPU has PAN2                (PAN s1e1R and s1e1W variants) {A64}.
       kPAN3,                     //!< CPU has PAN3                (support for SCTLR_ELx.EPAN) {A64}.
       kPAUTH,                    //!< CPU has PAUTH               (pointer authentication extension) {A64}.
+      kPAUTH_LR,                 //!< CPU has PAUTH_LR            (pointer authentication with link register hardening) {A64}.
       kPFAR,                     //!< CPU has PFAR                (physical fault address registers) {A64}.
       kPMU,                      //!< CPU has PMU                 {A64}.
       kPMULL,                    //!< CPU has PMULL               (ASIMD PMULL instructions) {A64}.

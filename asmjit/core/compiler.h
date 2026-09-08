@@ -20,6 +20,7 @@
 #include <asmjit/core/globals.h>
 #include <asmjit/core/inst.h>
 #include <asmjit/core/operand.h>
+#include <asmjit/core/pauth.h>
 
 ASMJIT_BEGIN_NAMESPACE
 
@@ -148,8 +149,12 @@ public:
 
   //! Creates a new \ref InvokeNode.
   ASMJIT_API Error new_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature);
+  //! \overload
+  ASMJIT_API Error new_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature, const PAuthInfo& pauth_info);
   //! Creates a new \ref InvokeNode and adds it to the instruction stream.
   ASMJIT_API Error add_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature);
+  //! \overload
+  ASMJIT_API Error add_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature, const PAuthInfo& pauth_info);
 
   //! \}
 
@@ -694,6 +699,10 @@ public:
 
   //! Function detail.
   FuncDetail _func_detail;
+
+  //! Pointer authentication information.
+  PAuthInfo _pauth_info;
+
   //! Function return value(s).
   OperandPack _rets;
   //! Function arguments.
@@ -705,9 +714,10 @@ public:
   //! \{
 
   //! Creates a new `InvokeNode` instance.
-  inline InvokeNode(InstId inst_id, InstOptions options) noexcept
+  inline InvokeNode(InstId inst_id, InstOptions options, const PAuthInfo& pauth_info) noexcept
     : InstNodeWithOperands(inst_id, options, 0),
       _func_detail(),
+      _pauth_info(pauth_info),
       _args(nullptr) {
     _set_type(NodeType::kInvoke);
     _reset_ops();
@@ -733,6 +743,33 @@ public:
   //! Returns the function detail.
   [[nodiscard]]
   ASMJIT_INLINE_NODEBUG const FuncDetail& detail() const noexcept { return _func_detail; }
+
+  //! Returns the pointer authentication information.
+  //!
+  //! Generally not applicable to relative calls (via Label).
+  [[nodiscard]]
+  ASMJIT_INLINE_NODEBUG PAuthInfo pauth_info() noexcept { return _pauth_info; }
+
+  //! Sets pointer authentication information to `pauth_info`.
+  //!
+  //! Generally not applicable to relative calls (via Label).
+  ASMJIT_INLINE_NODEBUG void set_pauth_info(const PAuthInfo& pauth_info) noexcept { _pauth_info = pauth_info; }
+
+  //! Returns whether the pointer to the function has authentication information and therefore must be authenticated.
+  [[nodiscard]]
+  ASMJIT_INLINE_NODEBUG bool has_authentication() const noexcept { return _pauth_info.has_authentication(); }
+
+  //! Returns the pointer authentication key.
+  [[nodiscard]]
+  ASMJIT_INLINE_NODEBUG PAuthKey pauth_key() const noexcept { return _pauth_info.key(); }
+
+  //! Returns the pointer authentication flags.
+  [[nodiscard]]
+  ASMJIT_INLINE_NODEBUG PAuthFlags pauth_flags() const noexcept { return _pauth_info.flags(); }
+
+  //! Returns the pointer authentication modifier.
+  [[nodiscard]]
+  ASMJIT_INLINE_NODEBUG uint64_t pauth_modifier() const noexcept { return _pauth_info.modifier(); }
 
   //! Returns the target operand.
   [[nodiscard]]

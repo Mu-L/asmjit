@@ -29,9 +29,9 @@ class BaseEmitter;
 //!   - Use plain old C's `setjmp()` and `longjmp()`. Asmjit always puts Assembler, Builder and Compiler to
 //!     a consistent state before calling \ref handle_error(), so `longjmp()` can be used without issues to cancel the
 //!     code generation if an error occurred. This method can be used if exception handling in your project is turned
-//!     off and you still want some comfort. In most cases it should be safe as AsmJit uses \ref Arena allocator and
-//!     the ownership of allocated memory it allocates always ends with the instance that allocated it. If using this
-//!     approach please never jump outside the life-time of \ref CodeHolder and \ref BaseEmitter.
+//!     off and you still want some comfort. In most cases it should be safe as AsmJit uses \ref axl::Arena allocator
+//!     and the ownership of allocated memory it allocates always ends with the instance that allocated it. If using
+//!     this approach please never jump outside the life-time of \ref CodeHolder and \ref BaseEmitter.
 //!
 //! \ref ErrorHandler can be attached to \ref CodeHolder or \ref BaseEmitter, which has a priority. The example below
 //! uses error handler that just prints the error, but lets AsmJit continue:

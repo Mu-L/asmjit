@@ -8,10 +8,13 @@
 
 #include <asmjit/core/build_defs.h>
 
-ASMJIT_BEGIN_SUB_NAMESPACE(DebugUtils)
+ASMJIT_BEGIN_NAMESPACE
 
 //! \addtogroup asmjit_error_handling
 //! \{
+
+//! Debug utilities.
+namespace DebugUtils {
 
 //! Called to output debugging messages.
 ASMJIT_API void debug_output(const char* str) noexcept;
@@ -54,8 +57,10 @@ ASMJIT_API void assertion_failure(const char* file, int line, const char* msg) n
   #define ASMJIT_NOT_REACHED() ASMJIT_ASSUME(0)
 #endif
 
+} // {DebugUtils}
+
 //! \}
 
-ASMJIT_END_SUB_NAMESPACE
+ASMJIT_END_NAMESPACE
 
 #endif // ASMJIT_CORE_DEBUG_UTILS_H_INCLUDED

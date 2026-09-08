@@ -17,6 +17,7 @@
 #include <asmjit/core/globals.h>
 #include <asmjit/core/jit_allocator.h>
 #include <asmjit/core/os_utils_p.h>
+#include <asmjit/core/pauth_utils_p.h>
 #include <asmjit/core/virt_mem.h>
 
 #if defined(ASMJIT_TEST)
@@ -626,7 +627,7 @@ static Error JitAllocator_new_block(JitAllocatorPrivateImpl* impl, JitAllocatorB
   return Error::kOk;
 }
 
-static void JitAllocatorImpl_deleteBlock(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
+static void JitAllocatorImpl_delete_block(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
   axl::maybe_unused(impl);
 
   if (block->has_flag(JitAllocatorBlock::kFlagDualMapped)) {
@@ -639,7 +640,7 @@ static void JitAllocatorImpl_deleteBlock(JitAllocatorPrivateImpl* impl, JitAlloc
   ::free(block);
 }
 
-static void JitAllocatorImpl_insertBlock(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
+static void JitAllocatorImpl_insert_block(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
   JitAllocatorPool* pool = block->pool();
 
   if (!pool->cursor) {
@@ -658,7 +659,7 @@ static void JitAllocatorImpl_insertBlock(JitAllocatorPrivateImpl* impl, JitAlloc
   pool->total_overhead_bytes += sizeof(JitAllocatorBlock) + JitAllocator_bit_vector_size_to_byte_size(block->area_size()) * 2u;
 }
 
-static void JitAllocatorImpl_removeBlock(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
+static void JitAllocatorImpl_remove_block(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
   JitAllocatorPool* pool = block->pool();
 
   // Remove from RBTree and List.
@@ -677,7 +678,7 @@ static void JitAllocatorImpl_removeBlock(JitAllocatorPrivateImpl* impl, JitAlloc
   pool->total_overhead_bytes -= sizeof(JitAllocatorBlock) + JitAllocator_bit_vector_size_to_byte_size(block->area_size()) * 2u;
 }
 
-static void JitAllocatorImpl_wipeOutBlock(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
+static void JitAllocatorImpl_wipe_out_block(JitAllocatorPrivateImpl* impl, JitAllocatorBlock* block) noexcept {
   if (block->has_flag(JitAllocatorBlock::kFlagEmpty)) {
     return;
   }
@@ -752,15 +753,15 @@ void JitAllocator::reset(ResetPolicy reset_policy) noexcept {
 
       while (block) {
         JitAllocatorBlock* next = block->next();
-        JitAllocatorImpl_deleteBlock(impl, block);
+        JitAllocatorImpl_delete_block(impl, block);
         block = next;
       }
 
       if (block_to_keep) {
         block_to_keep->_list_nodes[0] = nullptr;
         block_to_keep->_list_nodes[1] = nullptr;
-        JitAllocatorImpl_wipeOutBlock(impl, block_to_keep);
-        JitAllocatorImpl_insertBlock(impl, block_to_keep);
+        JitAllocatorImpl_wipe_out_block(impl, block_to_keep);
+        JitAllocatorImpl_insert_block(impl, block_to_keep);
         pool.empty_block_count = 1;
       }
     }
@@ -892,7 +893,7 @@ Error JitAllocator::alloc(Out<Span> out, size_t size) noexcept {
     ASMJIT_PROPAGATE(JitAllocator_new_block(impl, &block, pool, block_size));
     area_index = block->initial_area_start();
 
-    JitAllocatorImpl_insertBlock(impl, block);
+    JitAllocatorImpl_insert_block(impl, block);
     block->_search_start += area_size;
     block->_largest_unused_area -= area_size;
   }
@@ -956,8 +957,8 @@ Error JitAllocator::release(void* rx) noexcept {
   // Release the whole block if it became empty.
   if (block->is_empty()) {
     if (pool->empty_block_count || axl::test(impl->options, JitAllocatorOptions::kImmediateRelease)) {
-      JitAllocatorImpl_removeBlock(impl, block);
-      JitAllocatorImpl_deleteBlock(impl, block);
+      JitAllocatorImpl_remove_block(impl, block);
+      JitAllocatorImpl_delete_block(impl, block);
     }
     else {
       pool->empty_block_count++;
@@ -1044,6 +1045,7 @@ Error JitAllocator::query(Out<Span> out, void* rx) const noexcept {
   }
 
   JitAllocatorPrivateImpl* impl = static_cast<JitAllocatorPrivateImpl*>(_impl);
+
   LockGuard guard(impl->lock);
   JitAllocatorBlock* block = impl->tree.get(static_cast<uint8_t*>(rx));
 
@@ -1078,7 +1080,7 @@ Error JitAllocator::query(Out<Span> out, void* rx) const noexcept {
 // JitAllocator - Write
 // ====================
 
-static ASMJIT_INLINE VirtMem::CachePolicy JitAllocator_defaultPolicyForSpan(const JitAllocator::Span& span) noexcept {
+static ASMJIT_INLINE VirtMem::CachePolicy JitAllocator_default_policy_for_span(const JitAllocator::Span& span) noexcept {
   if (axl::test(span.flags(), JitAllocator::Span::Flags::kInstructionCacheClean)) {
     return VirtMem::CachePolicy::kNeverFlush;
   }
@@ -1097,7 +1099,7 @@ Error JitAllocator::write(Span& span, size_t offset, const void* src, size_t siz
   }
 
   if (policy == VirtMem::CachePolicy::kDefault) {
-    policy = JitAllocator_defaultPolicyForSpan(span);
+    policy = JitAllocator_default_policy_for_span(span);
   }
 
   VirtMem::ProtectJitReadWriteScope write_scope(span.rx(), span.size(), policy);
@@ -1116,7 +1118,7 @@ Error JitAllocator::write(Span& span, WriteFunc write_fn, void* user_data, VirtM
   }
 
   if (policy == VirtMem::CachePolicy::kDefault) {
-    policy = JitAllocator_defaultPolicyForSpan(span);
+    policy = JitAllocator_default_policy_for_span(span);
   }
 
   VirtMem::ProtectJitReadWriteScope write_scope(span.rx(), span.size(), policy);

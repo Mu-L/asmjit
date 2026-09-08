@@ -171,7 +171,7 @@ public:
   [[nodiscard]]
   ASMJIT_INLINE_NODEBUG bool has_diagnostic_option(DiagnosticOptions option) const noexcept { return axl::test(_diagnostic_options, option); }
 
-  //! Returns \ref Arena passed to \ref run().
+  //! Returns \ref axl::Arena passed to \ref run().
   [[nodiscard]]
   ASMJIT_INLINE_NODEBUG axl::Arena& arena() const noexcept { return *_arena; }
 

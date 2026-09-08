@@ -75,10 +75,10 @@ void log_info(const char* fmt, ...) noexcept;
 //! Called when `EXPECT()` fails.
 [[noreturn]] void test_failure(CheckResult* result, const char* fmt, ...) noexcept;
 
-template<typename T> [[nodiscard]]
+template<typename T> [[nodiscard]] [[maybe_unused]]
 static constexpr ZERO_TEST_INLINE_NODEBUG T&& forward(std::remove_reference_t<T>& v) noexcept { return static_cast<T&&>(v); }
 
-template<typename T> [[nodiscard]]
+template<typename T> [[nodiscard]] [[maybe_unused]]
 static constexpr ZERO_TEST_INLINE_NODEBUG T&& forward(std::remove_reference_t<T>&& v) noexcept { return static_cast<T&&>(v); }
 
 enum class MessageType : unsigned {
@@ -217,6 +217,7 @@ struct Formatter {
 };
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static bool format_binary_expression(StringBuffer& buf, const char* op, const LHS& lhs, const RHS& rhs) {
   if constexpr (Formatter<LHS>::kExists && Formatter<RHS>::kExists) {
     Formatter<LHS>::stringify(buf, lhs);
@@ -408,6 +409,7 @@ public:
 //!
 //! Commas nested inside `<>`, `()`, `[]` or `{}` are ignored, so a template type such as
 //! `std::pair<int, float>` is returned as a single type-name.
+[[maybe_unused]]
 static constexpr TestTypeName type_name_at(const char* names, size_t index) noexcept {
   size_t i = 0;
   size_t depth = 0;
@@ -462,15 +464,20 @@ struct TestTypes {
 //! Invokes `fn(TypeTag<T>{}, name)` for each `T` in the list (left-to-right, sequenced), taking
 //! `name` from the source spelling captured by `TEST_DEFINE_TYPES()`.
 template<typename Fn, typename... Types>
+[[maybe_unused]]
 static inline void for_each_type(const TestTypes<Types...>& list, Fn&& fn) {
   size_t index = 0;
   (fn(TypeTag<Types>{}, type_name_at(list.names, index++)), ...);
 }
 
+[[maybe_unused]]
 static inline uint32_t float_as_int(float x) noexcept { uint32_t out; memcpy(&out, &x, 4); return out; }
+
+[[maybe_unused]]
 static inline uint64_t float_as_int(double x) noexcept { uint64_t out; memcpy(&out, &x, 8); return out; }
 
 template<typename T>
+[[maybe_unused]]
 static inline auto ulp_diff_t(T lhs, T rhs) noexcept {
   uint32_t kBitSize = sizeof(T) * 8;
   uint32_t kSignPos = kBitSize - 1;
@@ -525,6 +532,7 @@ struct CheckResult {
 };
 
 template<typename T>
+[[maybe_unused]]
 static CheckResult check(const char* file, int line, const char* exp, T&& result) noexcept {
   bool ok = !!result;
   CheckResult out(file, line, exp, ok);
@@ -533,6 +541,7 @@ static CheckResult check(const char* file, int line, const char* exp, T&& result
 }
 
 template<typename T>
+[[maybe_unused]]
 static CheckResult expect_true(const char* file, int line, const char* exp, T&& result) noexcept {
   bool ok = result == true;
   CheckResult out(file, line, exp, ok);
@@ -541,6 +550,7 @@ static CheckResult expect_true(const char* file, int line, const char* exp, T&& 
 }
 
 template<typename T>
+[[maybe_unused]]
 static CheckResult expect_false(const char* file, int line, const char* exp, T&& result) noexcept {
   bool ok = result == false;
   CheckResult out(file, line, exp, ok);
@@ -549,6 +559,7 @@ static CheckResult expect_false(const char* file, int line, const char* exp, T&&
 }
 
 template<typename T>
+[[maybe_unused]]
 static CheckResult expect_null(const char* file, int line, const char* exp, T* result) noexcept requires (std::is_pointer_v<T*>) {
   bool ok = result == nullptr;
   CheckResult out(file, line, exp, ok);
@@ -557,6 +568,7 @@ static CheckResult expect_null(const char* file, int line, const char* exp, T* r
 }
 
 template<typename T>
+[[maybe_unused]]
 static CheckResult expect_not_null(const char* file, int line, const char* exp, T* result) noexcept requires (std::is_pointer_v<T*>) {
   bool ok = result != nullptr;
   CheckResult out(file, line, exp, ok);
@@ -565,6 +577,7 @@ static CheckResult expect_not_null(const char* file, int line, const char* exp, 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_eq(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs == rhs;
   CheckResult out(file, line, exp, ok);
@@ -573,6 +586,7 @@ static CheckResult expect_eq(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_ne(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs != rhs;
   CheckResult out(file, line, exp, ok);
@@ -581,6 +595,7 @@ static CheckResult expect_ne(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_gt(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs > rhs;
   CheckResult out(file, line, exp, ok);
@@ -589,6 +604,7 @@ static CheckResult expect_gt(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_ge(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs >= rhs;
   CheckResult out(file, line, exp, ok);
@@ -597,6 +613,7 @@ static CheckResult expect_ge(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_lt(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs < rhs;
   CheckResult out(file, line, exp, ok);
@@ -605,6 +622,7 @@ static CheckResult expect_lt(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_le(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs) noexcept {
   bool ok = lhs <= rhs;
   CheckResult out(file, line, exp, ok);
@@ -613,6 +631,7 @@ static CheckResult expect_le(const char* file, int line, const char* exp, LHS&& 
 }
 
 template<typename LHS, typename RHS>
+[[maybe_unused]]
 static CheckResult expect_near_ulp(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs, uint64_t max_ulp_diff) noexcept {
   auto actual_ulp_diff = ulp_diff(lhs, rhs);
   bool ok = actual_ulp_diff <= max_ulp_diff;
@@ -629,6 +648,7 @@ static CheckResult expect_near_ulp(const char* file, int line, const char* exp, 
 }
 
 template<typename LHS, typename RHS, typename E>
+[[maybe_unused]]
 static CheckResult expect_near_eps(const char* file, int line, const char* exp, LHS&& lhs, RHS&& rhs, const E& epsilon) noexcept {
   double diff = double(lhs) - double(rhs);
   if (diff < 0.0) {

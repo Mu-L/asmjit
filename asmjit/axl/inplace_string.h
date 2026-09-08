@@ -12,6 +12,9 @@
 
 ASMJIT_BEGIN_SUB_NAMESPACE(axl)
 
+//! \addtogroup asmjit_axl
+//! \{
+
 //! Inplace string - only useful for strings that would never exceed `N` characters; always null-terminated.
 template<size_t N>
 struct InplaceString {

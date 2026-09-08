@@ -183,9 +183,15 @@ Error BaseCompiler::end_func() {
 // BaseCompiler - Function Invocation
 // ==================================
 
+static constexpr PAuthInfo unauthenticated_ptr_info {};
+
 Error BaseCompiler::new_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature) {
+  return new_invoke_node(out, inst_id, o0, signature, unauthenticated_ptr_info);
+}
+
+Error BaseCompiler::new_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature, const PAuthInfo& pauth_info) {
   InvokeNode* node = nullptr;
-  ASMJIT_PROPAGATE(new_node_t<InvokeNode>(Out(node), inst_id, InstOptions::kNone));
+  ASMJIT_PROPAGATE(new_node_t<InvokeNode>(Out(node), inst_id, InstOptions::kNone, pauth_info));
 
   node->set_op_count(1);
   node->set_op(0, o0);
@@ -213,7 +219,17 @@ Error BaseCompiler::new_invoke_node(Out<InvokeNode*> out, InstId inst_id, const 
 Error BaseCompiler::add_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature) {
   State state = _grab_state();
 
-  ASMJIT_PROPAGATE(new_invoke_node(out, inst_id, o0, signature));
+  ASMJIT_PROPAGATE(new_invoke_node(out, inst_id, o0, signature, unauthenticated_ptr_info));
+  Builder_assign_inst_state(this, *out, state);
+
+  add_node(*out);
+  return Error::kOk;
+}
+
+Error BaseCompiler::add_invoke_node(Out<InvokeNode*> out, InstId inst_id, const Operand_& o0, const FuncSignature& signature, const PAuthInfo& pauth_info) {
+  State state = _grab_state();
+
+  ASMJIT_PROPAGATE(new_invoke_node(out, inst_id, o0, signature, pauth_info));
   Builder_assign_inst_state(this, *out, state);
 
   add_node(*out);

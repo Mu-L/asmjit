@@ -244,6 +244,9 @@ asmjit_define_sources(ASMJIT_SRC
   asmjit/core/os_utils.cpp
   asmjit/core/os_utils.h
   asmjit/core/os_utils_p.h
+  asmjit/core/pauth.cpp
+  asmjit/core/pauth.h
+  asmjit/core/pauth_utils_p.h
   asmjit/core/ra_assignment_p.h
   asmjit/core/ra_cfg_block_p.h
   asmjit/core/ra_cfg_builder_p.h

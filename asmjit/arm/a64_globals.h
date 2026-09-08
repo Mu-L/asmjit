@@ -64,7 +64,15 @@ namespace Inst {
     kIdBics,                             //!< Instruction 'bics'.
     kIdBl,                               //!< Instruction 'bl'.
     kIdBlr,                              //!< Instruction 'blr'.
+    kIdBlraa,                            //!< Instruction 'blraa'.
+    kIdBlraaz,                           //!< Instruction 'blraaz'.
+    kIdBlrab,                            //!< Instruction 'blrab'.
+    kIdBlrabz,                           //!< Instruction 'blrabz'.
     kIdBr,                               //!< Instruction 'br'.
+    kIdBraa,                             //!< Instruction 'braa'.
+    kIdBraaz,                            //!< Instruction 'braaz'.
+    kIdBrab,                             //!< Instruction 'brab'.
+    kIdBrabz,                            //!< Instruction 'brabz'.
     kIdBrk,                              //!< Instruction 'brk'.
     kIdBti,                              //!< Instruction 'bti'.
     kIdCas,                              //!< Instruction 'cas'.
@@ -297,10 +305,22 @@ namespace Inst {
     kIdPacdza,                           //!< Instruction 'pacdza'.
     kIdPacdzb,                           //!< Instruction 'pacdzb'.
     kIdPacga,                            //!< Instruction 'pacga'.
+    kIdPacia,                            //!< Instruction 'pacia'.
+    kIdPacia1716,                        //!< Instruction 'pacia1716'.
+    kIdPaciasp,                          //!< Instruction 'paciasp'.
+    kIdPaciaz,                           //!< Instruction 'paciaz'.
+    kIdPacib,                            //!< Instruction 'pacib'.
+    kIdPacib1716,                        //!< Instruction 'pacib1716'.
+    kIdPacibsp,                          //!< Instruction 'pacibsp'.
+    kIdPacibz,                           //!< Instruction 'pacibz'.
+    kIdPaciza,                           //!< Instruction 'paciza'.
+    kIdPacizb,                           //!< Instruction 'pacizb'.
     kIdPrfm,                             //!< Instruction 'prfm'.
     kIdPssbb,                            //!< Instruction 'pssbb'.
     kIdRbit,                             //!< Instruction 'rbit'.
     kIdRet,                              //!< Instruction 'ret'.
+    kIdRetaa,                            //!< Instruction 'retaa'.
+    kIdRetab,                            //!< Instruction 'retab'.
     kIdRev,                              //!< Instruction 'rev'.
     kIdRev16,                            //!< Instruction 'rev16'.
     kIdRev32,                            //!< Instruction 'rev32'.

@@ -172,6 +172,7 @@ enum EncodingId : uint32_t {
   kEncodingBaseBfx,
   kEncodingBaseBranchCmp,
   kEncodingBaseBranchReg,
+  kEncodingBaseBranchRegAuth,
   kEncodingBaseBranchRel,
   kEncodingBaseBranchTst,
   kEncodingBaseCCmp,
@@ -488,6 +489,7 @@ struct BaseAtomicCasp {
 };
 
 using BaseBranchReg = BaseOp;
+using BaseBranchRegAuth = BaseOp;
 using BaseBranchRel = BaseOp;
 using BaseBranchCmp = BaseOp;
 using BaseBranchTst = BaseOp;
@@ -788,7 +790,8 @@ extern const BaseBfi baseBfi[3];
 extern const BaseBfm baseBfm[3];
 extern const BaseBfx baseBfx[3];
 extern const BaseBranchCmp baseBranchCmp[2];
-extern const BaseBranchReg baseBranchReg[3];
+extern const BaseBranchReg baseBranchReg[7];
+extern const BaseBranchRegAuth baseBranchRegAuth[4];
 extern const BaseBranchRel baseBranchRel[3];
 extern const BaseBranchTst baseBranchTst[2];
 extern const BaseCCmp baseCCmp[2];
@@ -805,15 +808,15 @@ extern const BaseLogical baseLogical[8];
 extern const BaseMinMax baseMinMax[4];
 extern const BaseMovKNZ baseMovKNZ[3];
 extern const BaseMvnNeg baseMvnNeg[3];
-extern const BaseOp baseOp[24];
+extern const BaseOp baseOp[32];
 extern const BaseOpImm baseOpImm[15];
 extern const BaseOpX16 baseOpX16[1];
 extern const BasePrfm basePrfm[1];
-extern const BaseR baseR[10];
+extern const BaseR baseR[12];
 extern const BaseRM_NoImm baseRM_NoImm[21];
 extern const BaseRM_SImm10 baseRM_SImm10[2];
 extern const BaseRM_SImm9 baseRM_SImm9[23];
-extern const BaseRR baseRR[18];
+extern const BaseRR baseRR[20];
 extern const BaseRRII baseRRII[2];
 extern const BaseRRR baseRRR[26];
 extern const BaseRRRR baseRRRR[6];

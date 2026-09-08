@@ -105,7 +105,7 @@ public:
   [[nodiscard]]
   ASMJIT_INLINE_NODEBUG BitWord* data_mut() noexcept { return _bits.data(); }
 
-  //! Returns the number of BitWords returned by \ref bits().
+  //! Returns the number of BitWords returned by \ref data().
   [[nodiscard]]
   ASMJIT_INLINE_CONSTEXPR size_t bit_word_count() const noexcept { return kNumBitWords; }
 

@@ -287,6 +287,17 @@ template<typename T>
 [[nodiscard]]
 ASMJIT_INLINE_CONSTEXPR T neg(const T& value) noexcept { return T(as_std_uint(T(0)) - as_std_uint(value)); }
 
+// Repeat Byte
+// ===========
+
+template<typename T>
+[[nodiscard]]
+ASMJIT_INLINE_CONSTEXPR T repeat_byte(const T& x) noexcept {
+  using U = std_uint_t<sizeof(T)>;
+  constexpr U mul_const = U(0x0101010101010101u & neg(U(1)));
+  return T(U(x) * mul_const);
+}
+
 // Boolean Utilities
 // =================
 
@@ -611,6 +622,15 @@ ASMJIT_INLINE_CONSTEXPR bool has_at_least_2_bits_set(auto value) noexcept {
   return (v & (v - 1u)) != 0u;
 }
 
+// Pair Bits
+// =========
+
+template<typename T>
+static ASMJIT_INLINE T pair_bits(const T& bits) noexcept {
+  using U = std_uint_t<sizeof(T)>;
+  return T(U(bits) | ((U(bits) & repeat_byte<U>(0x55u)) << 1) | ((U(bits) & repeat_byte<U>(0xAAu)) >> 1));
+}
+
 // Alignment
 // =========
 
@@ -730,17 +750,6 @@ static ASMJIT_INLINE T bit_reverse(const T& x) noexcept {
   v = ((v >> 4) & m4) | ((v & m4) << 4);
 
   return byteswap(T(v));
-}
-
-// Repeat Byte
-// ===========
-
-template<typename T>
-[[nodiscard]]
-ASMJIT_INLINE_CONSTEXPR T repeat_byte(const T& x) noexcept {
-  using U = std_uint_t<sizeof(T)>;
-  constexpr U mul_const = U(0x0101010101010101u & neg(U(1)));
-  return T(U(x) * mul_const);
 }
 
 // Is Int

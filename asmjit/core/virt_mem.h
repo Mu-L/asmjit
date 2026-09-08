@@ -76,16 +76,16 @@ enum class MemoryFlags : uint32_t {
   //! Memory is executable.
   kAccessExecute = 0x00000004u,
 
-  //! A combination of \ref kAccessRead and \ref kAccessWrite.
+  //! A combination of `kAccessRead` and `kAccessWrite`.
   kAccessReadWrite = kAccessRead | kAccessWrite,
 
-  //! A combination of \ref kAccessRead, \ref kAccessWrite.
+  //! A combination of `kAccessRead`, `kAccessWrite`.
   kAccessRW = kAccessRead | kAccessWrite,
 
-  //! A combination of \ref kAccessRead and \ref kAccessExecute.
+  //! A combination of `kAccessRead` and `kAccessExecute`.
   kAccessRX = kAccessRead | kAccessExecute,
 
-  //! A combination of \ref kAccessRead, \ref kAccessWrite, and \ref kAccessExecute.
+  //! A combination of `kAccessRead`, `kAccessWrite`, and `kAccessExecute`.
   kAccessRWX = kAccessRead | kAccessWrite | kAccessExecute,
 
   //! Use a `MAP_JIT` flag available on Apple platforms (introduced by Mojave), which allows JIT code to be
@@ -103,7 +103,7 @@ enum class MemoryFlags : uint32_t {
   //! \ref VirtMem::protect() to change the access flags.
   //!
   //! \note This flag can only be used with \ref VirtMem::alloc() and \ref VirtMem::alloc_dual_mapping().
-  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if \ref kAccessRead is used.
+  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if `kAccessRead` is used.
   kMMapMaxAccessRead = 0x00000020u,
 
   //! Pass `PROT_MAX(PROT_WRITE)` or `PROT_MPROTECT(PROT_WRITE)` to `mmap()` on platforms that support it.
@@ -112,7 +112,7 @@ enum class MemoryFlags : uint32_t {
   //! \ref VirtMem::protect() to change the access flags.
   //!
   //! \note This flag can only be used with \ref VirtMem::alloc() and \ref VirtMem::alloc_dual_mapping().
-  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if \ref kAccessWrite is used.
+  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if `kAccessWrite` is used.
   kMMapMaxAccessWrite = 0x00000040u,
 
   //! Pass `PROT_MAX(PROT_EXEC)` or `PROT_MPROTECT(PROT_EXEC)` to `mmap()` on platforms that support it.
@@ -121,19 +121,19 @@ enum class MemoryFlags : uint32_t {
   //! \ref VirtMem::protect() to change the access flags.
   //!
   //! \note This flag can only be used with \ref VirtMem::alloc() and \ref VirtMem::alloc_dual_mapping().
-  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if \ref kAccessExecute is used.
+  //! However \ref VirtMem::alloc_dual_mapping() may automatically use this if `kAccessExecute` is used.
   kMMapMaxAccessExecute = 0x00000080u,
 
-  //! A combination of \ref kMMapMaxAccessRead and \ref kMMapMaxAccessWrite.
+  //! A combination of `kMMapMaxAccessRead` and `kMMapMaxAccessWrite`.
   kMMapMaxAccessReadWrite = kMMapMaxAccessRead | kMMapMaxAccessWrite,
 
-  //! A combination of \ref kMMapMaxAccessRead and \ref kMMapMaxAccessWrite.
+  //! A combination of `kMMapMaxAccessRead` and `kMMapMaxAccessWrite`.
   kMMapMaxAccessRW = kMMapMaxAccessRead | kMMapMaxAccessWrite,
 
-  //! A combination of \ref kMMapMaxAccessRead and \ref kMMapMaxAccessExecute.
+  //! A combination of `kMMapMaxAccessRead` and `kMMapMaxAccessExecute`.
   kMMapMaxAccessRX = kMMapMaxAccessRead | kMMapMaxAccessExecute,
 
-  //! A combination of \ref kMMapMaxAccessRead, \ref kMMapMaxAccessWrite, \ref kMMapMaxAccessExecute.
+  //! A combination of `kMMapMaxAccessRead`, `kMMapMaxAccessWrite`, and `kMMapMaxAccessExecute`.
   kMMapMaxAccessRWX = kMMapMaxAccessRead | kMMapMaxAccessWrite | kMMapMaxAccessExecute,
 
   //! Use `MAP_SHARED` when calling mmap().
@@ -233,7 +233,10 @@ enum class HardenedRuntimeFlags : uint32_t {
   kMapJit = 0x00000002u,
 
   //! Read+Write+Execute can be allocated with dual mapping approach (one region with RW and the other with RX).
-  kDualMapping = 0x00000004u
+  kDualMapping = 0x00000004u,
+
+  //! Target platform enforces pointer authentication (PAUTH) - always true when compiling for `ARM64E` targets.
+  kPtrAuth = 0x00000008u
 };
 ASMJIT_DEFINE_ENUM_FLAGS(HardenedRuntimeFlags)
 

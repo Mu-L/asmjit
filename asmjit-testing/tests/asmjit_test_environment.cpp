@@ -84,6 +84,17 @@ static void flush_instruction_cache(void* ptr, size_t size) noexcept {
   VirtMem::flush_instruction_cache(ptr, size);
 }
 
+static void* make_authenticated(void* ptr) noexcept {
+  if (PAuthUtils::is_pauth_enforced()) {
+    void* signed_ptr = PAuthUtils::sign_c_func_ptr(ptr);
+    printf("  Authenticate Pointer    : %p -> %p\n", ptr, signed_ptr);
+    return signed_ptr;
+  }
+  else {
+    return ptr;
+  }
+}
+
 static void invoke_void_function(void* ptr) noexcept {
   printf("  Invoke JIT code at addr : %p\n", ptr);
 
@@ -124,6 +135,7 @@ static void print_virt_mem_info_and_test_execution() noexcept {
   printf("  Hardening was detected  : %s\n", stringify_bool(rti.has_flag(HardenedRuntimeFlags::kEnabled    )));
   printf("  MAP_JIT is available    : %s\n", stringify_bool(rti.has_flag(HardenedRuntimeFlags::kMapJit     )));
   printf("  DualMapping is available: %s\n", stringify_bool(rti.has_flag(HardenedRuntimeFlags::kDualMapping)));
+  printf("  Pointer authentication  : %s\n", stringify_bool(rti.has_flag(HardenedRuntimeFlags::kPtrAuth    )));
   printf("\n");
 
   if (!rti.has_flag(HardenedRuntimeFlags::kEnabled)) {
@@ -140,7 +152,7 @@ static void print_virt_mem_info_and_test_execution() noexcept {
 
       if (func_size) {
         flush_instruction_cache(func_ptr, func_size);
-        invoke_void_function(func_ptr);
+        invoke_void_function(make_authenticated(func_ptr));
       }
 #endif // TEST_ENVIRONMENT_HAS_JIT
 
@@ -170,7 +182,7 @@ static void print_virt_mem_info_and_test_execution() noexcept {
 #if defined(TEST_ENVIRONMENT_HAS_JIT)
       if (func_size) {
         flush_instruction_cache(func_ptr, func_size);
-        invoke_void_function(func_ptr);
+        invoke_void_function(make_authenticated(func_ptr));
       }
 #endif // TEST_ENVIRONMENT_HAS_JIT
 
@@ -206,7 +218,7 @@ static void print_virt_mem_info_and_test_execution() noexcept {
 #if defined(TEST_ENVIRONMENT_HAS_JIT)
       if (func_size) {
         flush_instruction_cache(func_ptr, func_size);
-        invoke_void_function(func_ptr);
+        invoke_void_function(make_authenticated(func_ptr));
       }
 #endif // TEST_ENVIRONMENT_HAS_JIT
 
@@ -229,7 +241,7 @@ static void print_virt_mem_info_and_test_execution() noexcept {
       size_t func_size = write_empty_function_at(offset_pointer(dm.rw, kVirtFuncOffset), kVMemAllocSize);
       if (func_size) {
         flush_instruction_cache(offset_pointer(dm.rx, kVirtFuncOffset), func_size);
-        invoke_void_function(offset_pointer(dm.rx, kVirtFuncOffset));
+        invoke_void_function(make_authenticated(offset_pointer(dm.rx, kVirtFuncOffset)));
       }
 #endif // TEST_ENVIRONMENT_HAS_JIT
 
@@ -262,6 +274,7 @@ static void print_jit_runtime_info_and_test_execution_with_params(const JitAlloc
   printf("  Runtime.add() result    : %s\n", stringify_result(result));
 
   if (result == Error::kOk) {
+    // NOTE: JitRuntime provides an already authenticated function pointer, so don't sign it again.
     invoke_void_function((void*)fn);
 
     result = rt.release(fn);

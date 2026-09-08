@@ -712,7 +712,7 @@ public:
     return cc->end_func();
   }
 
-  //! Return from function, a convenience function that calls \ref BaseCompiler::ret().
+  //! Return from function, a convenience function that calls `BackendCompiler::ret()`.
   //!
   //! \note This doesn't end the function - it just emits a return.
   ASMJIT_INLINE Error ret() { return cc->ret(); }

@@ -147,6 +147,7 @@ Error FormatterInternal::format_feature(String& sb, uint32_t feature_id) noexcep
     "PAN2\0"
     "PAN3\0"
     "PAUTH\0"
+    "PAUTH_LR\0"
     "PFAR\0"
     "PMU\0"
     "PMULL\0"

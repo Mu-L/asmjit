@@ -565,6 +565,13 @@ TEST_CASE(axl_commons_has_at_least_2_bits_set) {
   EXPECT_TRUE(axl::has_at_least_2_bits_set(uint64_t(0xFFFFFFFFFFFFFFFF)));
 }
 
+TEST_CASE_T(axl_commons_pair_bits, test_int_types) {
+  size_t kBitSize = axl::bit_size_of<T>;
+  for (uint32_t i = 0u; i < kBitSize; i++) {
+    EXPECT_EQ(axl::pair_bits(axl::shl(T(1), i)), axl::shl(T(0x3), i & 0xFE));
+  }
+}
+
 TEST_CASE(axl_commons_is_aligned) {
   EXPECT_FALSE(axl::is_aligned<size_t>(0xFFFF, 4u));
   EXPECT_TRUE(axl::is_aligned<size_t>(0xFFF4, 4u));

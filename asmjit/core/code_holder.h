@@ -855,7 +855,7 @@ public:
   //! Creates an uninitialized CodeHolder (you must init() it before it can be used).
   //!
   //! An optional `inplace_storage` argument can be used to initialize the first block of
-  //! \ref Arena that \ref CodeHolder uses to use a user-provided memory block.
+  //! \ref axl::Arena that \ref CodeHolder uses to use a user-provided memory block.
   //!
   //! \note If `inplace_storage` is used (contains a non-empty storage) then such storage cannot
   //! go out of scope before `CodeHolder`.

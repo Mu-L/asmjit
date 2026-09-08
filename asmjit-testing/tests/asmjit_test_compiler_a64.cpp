@@ -424,7 +424,7 @@ public:
     cc.mov(fn, (uint64_t)called_fn);
 
     InvokeNode* invoke_node;
-    cc.invoke(Out(invoke_node), fn, FuncSignature::build<uint32_t, uint32_t, uint32_t>());
+    cc.invoke(Out(invoke_node), fn, FuncSignature::build<uint32_t, uint32_t, uint32_t>(), pauth_c_func());
     invoke_node->set_arg(0, x);
     invoke_node->set_arg(1, y);
     invoke_node->set_ret(0, r);
@@ -476,7 +476,7 @@ public:
     cc.mov(fn, (uint64_t)called_fn);
 
     InvokeNode* invoke_node;
-    cc.invoke(Out(invoke_node), fn, FuncSignature::build<double, double, double>());
+    cc.invoke(Out(invoke_node), fn, FuncSignature::build<double, double, double>(), pauth_c_func());
     invoke_node->set_arg(0, x);
     invoke_node->set_arg(1, y);
     invoke_node->set_ret(0, r);
@@ -528,7 +528,7 @@ public:
     cc.mov(fn, (uint64_t)called_fn);
 
     InvokeNode* invoke_node;
-    cc.invoke(Out(invoke_node), fn, FuncSignature::build<double, double, double>());
+    cc.invoke(Out(invoke_node), fn, FuncSignature::build<double, double, double>(), pauth_c_func());
     invoke_node->set_arg(0, y);
     invoke_node->set_arg(1, x);
     invoke_node->set_ret(0, r);
@@ -568,6 +568,66 @@ public:
   }
 
   void compile(a64::Compiler& cc) override {
+    FuncNode* called_fn = cc.new_func(FuncSignature::build<uint32_t, uint32_t, uint32_t>());
+    FuncNode* main_fn = cc.add_func(FuncSignature::build<uint32_t, uint32_t, uint32_t>());
+
+    {
+      a64::Gp v1 = cc.new_gp32("v1");
+      a64::Gp v2 = cc.new_gp32("v2");
+
+      InvokeNode* invoke_node;
+      cc.invoke(Out(invoke_node), called_fn->label(), FuncSignature::build<uint32_t, uint32_t, uint32_t>());
+
+      main_fn->set_arg(0, v1);
+      main_fn->set_arg(1, v2);
+
+      invoke_node->set_ret(0, v1);
+      invoke_node->set_arg(0, v1);
+      invoke_node->set_arg(1, v2);
+
+      cc.ret(v1);
+      cc.end_func();
+    }
+
+    {
+      a64::Gp v1 = cc.new_gp32("v1");
+      a64::Gp v2 = cc.new_gp32("v2");
+
+      cc.add_func(called_fn);
+
+      called_fn->set_arg(0, v1);
+      called_fn->set_arg(1, v2);
+
+      cc.add(v1, v1, v2);
+      cc.ret(v1);
+      cc.end_func();
+    }
+  }
+
+  bool run(void* _func, String& result, String& expect) override {
+    using Func = uint32_t (*)(uint32_t, uint32_t);
+    Func func = axl::ptr_as_func<Func>(_func);
+
+    result.assign_format("ret={%u}", func(10, 32));
+    expect.assign_format("ret={%u}", 42);
+
+    return result == expect;
+  }
+};
+
+// a64::Compiler - A64Test_Invoke5
+// ===============================
+
+class A64Test_Invoke5 : public A64TestCase {
+public:
+  A64Test_Invoke5()
+    : A64TestCase("Invoke5") {}
+
+  static void add(TestApp& app) {
+    app.add(new A64Test_Invoke5());
+  }
+
+  void compile(a64::Compiler& cc) override {
     static constexpr uint32_t kRegCount = 2;
 
     cc.add_func(FuncSignature::build<uint32_t>());
@@ -589,7 +649,7 @@ public:
     cc.virt_reg_by_reg(gpr[kRegCount - 1])->set_home_id_hint(a64::Gp::kIdLr);
 
     InvokeNode* invoke_node;
-    cc.invoke(Out(invoke_node), fn, FuncSignature::build<uint32_t>());
+    cc.invoke(Out(invoke_node), fn, FuncSignature::build<uint32_t>(), pauth_c_func());
     invoke_node->set_ret(0, out);
 
     for (uint32_t i = 0; i < kRegCount; i++) {
@@ -632,7 +692,7 @@ public:
   A64Test_JumpTable(bool annotated)
     : A64TestCase("A64Test_JumpTable"),
       _annotated(annotated) {
-    _name.assign_format("JumpTable {%s}", annotated ? "Annotated" : "Unknown Target");
+    _name.assign_format("JumpTable {%s}", annotated ? "Annotated" : "Not Annotated");
   }
 
   enum Operator {
@@ -750,6 +810,7 @@ void compiler_add_a64_tests(TestApp& app) {
   app.add_t<A64Test_Invoke2>();
   app.add_t<A64Test_Invoke3>();
   app.add_t<A64Test_Invoke4>();
+  app.add_t<A64Test_Invoke5>();
   app.add_t<A64Test_JumpTable>();
 }
 

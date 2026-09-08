@@ -22,6 +22,7 @@ struct Less {
   ASMJIT_INLINE_NODEBUG bool operator()(const A& a, const B& b) const noexcept { return a < b; }
 };
 
+//! Searches for the first element in the partitioned source range which is not ordered before value.
 template<typename T, typename Value, typename LessFn = Less>
 [[nodiscard]]
 static ASMJIT_INLINE size_t lower_bound(Span<T> span, const Value& value, LessFn&& less_than_fn = LessFn{}) noexcept {

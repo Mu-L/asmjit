@@ -20,6 +20,114 @@ ASMJIT_BEGIN_SUB_NAMESPACE(a64)
 //! \{
 
 //! AArch64 compiler implementation.
+//!
+//! ### Compiler Basics
+//!
+//! The first \ref a64::Compiler example shows how to generate a function that simply returns an integer value. It's
+//! an analogy to the first Assembler example:
+//!
+//! ```
+//! #include <asmjit/a64.h>
+//! #include <stdio.h>
+//!
+//! using namespace asmjit;
+//!
+//! int main() {
+//!   using Func = int (*)(void);              // Signature of the generated function.
+//!
+//!   JitRuntime rt;                           // Runtime specialized for JIT code execution.
+//!   CodeHolder code;                         // Holds code and relocation information.
+//!
+//!   code.init(rt.environment(),              // Initialize code to match the JIT environment.
+//!             rt.cpu_features());
+//!   a64::Compiler cc(&code);                 // Create and attach a64::Compiler to code.
+//!
+//!   cc.add_func(FuncSignature::build<int>());// Begin a function of `int fn(void)` signature.
+//!
+//!   a64::Gp virt_reg = cc.new_gp32();        // Create a 32-bit general purpose register.
+//!   cc.mov(virt_reg, 1);                     // Move one to our virtual register `virt_reg`.
+//!   cc.ret(virt_reg);                        // Return `virt_reg` from the function.
+//!
+//!   cc.end_func();                           // End of the function body.
+//!   cc.finalize();                           // Translate and assemble the whole 'cc' content.
+//!   // ----> a64::Compiler is no longer needed from here and can be destroyed <----
+//!
+//!   Func fn;
+//!   Error err = rt.add(&fn, &code);          // Add the generated code to the runtime.
+//!   if (err != Error::kOk) {
+//!     return 1;                              // Handle a possible error returned by AsmJit.
+//!   }
+//!   // ----> CodeHolder is no longer needed from here and can be destroyed <----
+//!
+//!   int result = fn();                       // Execute the generated code.
+//!   printf("%d\n", result);                  // Print the resulting "1".
+//!
+//!   rt.release(fn);                          // Explicitly remove the function from the runtime.
+//!   return 0;
+//! }
+//! ```
+//!
+//! ### Pointer authentication (PAUTH)
+//!
+//! PAUTH is an ARMv8.3-A architecture extension that secures memory by adding a cryptographic signature to
+//! unused high bits of 64-bit pointers. Successful use of this extension requires CPU capabilities (PAUTH)
+//! and also ABI enablement, for example `arm64e` ABI as used by Apple platforms.
+//!
+//! The example below shows how to decorate a function call to emit AArch64 code that would seamlessly work
+//! on platforms that enforce PAUTH, such as `arm64e`. It's safe to use these decorators as when PAUTH is
+//! not enforced the PAUTH information would be simply ignored by the Compiler.
+//!
+//! ```
+//! #include <asmjit/a64.h>
+//! #include <stdio.h>
+//!
+//! using namespace asmjit;
+//!
+//! static int called_fn() noexcept { return 41; }
+//!
+//! int main() {
+//!   using Func = int (*)(void);              // Signature of the generated function.
+//!
+//!   JitRuntime rt;                           // Runtime specialized for JIT code execution.
+//!   CodeHolder code;                         // Holds code and relocation information.
+//!
+//!   code.init(rt.environment(),              // Initialize code to match the JIT environment.
+//!             rt.cpu_features());
+//!   a64::Compiler cc(&code);                 // Create and attach a64::Compiler to code.
+//!
+//!   cc.add_func(FuncSignature::build<int>());// Begin a function of `int fn(void)` signature.
+//!   a64::Gp v = cc.new_gp32();.
+//!
+//!   // InvokeNode represents function invocation.
+//!   InvokeNode* invoke_node;
+//!   cc.invoke(Out(invoke_node),
+//!     (uint64_t)called_fn,                   // Called function pointer (signed on arm64e).
+//!     FuncSignature::build<int>(),           // Called function signature.
+//!     pauth_c_func());                       // PAuth information that will be used when enforced.
+//!
+//!   invoke_node->set_ret(0, v);              // Assign the first return value into `v`.
+//!   cc.add(v, v, 1);                         // Add 1 to `v`.
+//!   cc.ret(v);                               // Return the value returned by `called_fn`.
+//!
+//!   cc.end_func();                           // End of the function body.
+//!   cc.finalize();                           // Translate and assemble the whole 'cc' content.
+//!   // ----> a64::Compiler is no longer needed from here and can be destroyed <----
+//!
+//!   Func fn;
+//!   Error err = rt.add(&fn, &code);          // Add the generated code to the runtime.
+//!   if (err != Error::kOk) {
+//!     return 1;                              // Handle a possible error returned by AsmJit.
+//!   }
+//!   // ----> CodeHolder is no longer needed from here and can be destroyed <----
+//!
+//!   int result = fn();                       // Execute the generated code.
+//!   printf("%d\n", result);                  // Print the resulting "42".
+//!
+//!   rt.release(fn);                          // Explicitly remove the function from the runtime.
+//!   return 0;
+//! }
+//! ```
+
 class ASMJIT_VIRTAPI Compiler final
   : public BaseCompiler,
     public EmitterExplicitT<Compiler> {
@@ -198,14 +306,15 @@ public:
 
   //! Invoke a function call without `target` type enforcement.
   ASMJIT_INLINE_NODEBUG Error invoke_(Out<InvokeNode*> out, const Operand_& target, const FuncSignature& signature) {
-    return add_invoke_node(out, Inst::kIdBlr, target, signature);
+    return add_invoke_node(out, Inst::kIdBl, target, signature);
+  }
+
+  //! \overload
+  ASMJIT_INLINE_NODEBUG Error invoke_(Out<InvokeNode*> out, const Operand_& target, const FuncSignature& signature, const PAuthInfo& pauth_info) {
+    return add_invoke_node(out, Inst::kIdBl, target, signature, pauth_info);
   }
 
   //! Invoke a function call of the given `target` and `signature` and store the added node to `out`.
-  //!
-  //! Creates a new \ref InvokeNode, initializes all the necessary members to match the given function `signature`,
-  //! adds the node to the compiler, and stores its pointer to `out`. The operation is atomic, if anything fails
-  //! nullptr is stored in `out` and error code is returned.
   ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Gp& target, const FuncSignature& signature) { return invoke_(out, target, signature); }
   //! \overload
   ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Mem& target, const FuncSignature& signature) { return invoke_(out, target, signature); }
@@ -215,6 +324,17 @@ public:
   ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Imm& target, const FuncSignature& signature) { return invoke_(out, target, signature); }
   //! \overload
   ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, uint64_t target, const FuncSignature& signature) { return invoke_(out, Imm(int64_t(target)), signature); }
+
+  //! Invoke a function call of the given `target`, `signature`, and `pauth_info` and store the added node to `out`.
+  ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Gp& target, const FuncSignature& signature, const PAuthInfo& pauth_info) { return invoke_(out, target, signature, pauth_info); }
+  //! \overload
+  ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Mem& target, const FuncSignature& signature, const PAuthInfo& pauth_info) { return invoke_(out, target, signature, pauth_info); }
+  //! \overload
+  ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Label& target, const FuncSignature& signature, const PAuthInfo& pauth_info) { return invoke_(out, target, signature, pauth_info); }
+  //! \overload
+  ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, const Imm& target, const FuncSignature& signature, const PAuthInfo& pauth_info) { return invoke_(out, target, signature, pauth_info); }
+  //! \overload
+  ASMJIT_INLINE_NODEBUG Error invoke(Out<InvokeNode*> out, uint64_t target, const FuncSignature& signature, const PAuthInfo& pauth_info) { return invoke_(out, Imm(int64_t(target)), signature, pauth_info); }
 
   //! Return from function.
   //!

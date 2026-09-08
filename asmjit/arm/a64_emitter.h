@@ -704,6 +704,33 @@ struct EmitterExplicitT {
   //! \name MTE Instructions
   //! \{
 
+  ASMJIT_INST_4x(addg, Addg, Gp, Gp, Imm, Imm)
+  ASMJIT_INST_2x(cmpp, Cmpp, Gp, Gp)
+  ASMJIT_INST_3x(gmi, Gmi, Gp, Gp, Gp)
+  ASMJIT_INST_2x(ldg, Ldg, Gp, Mem)
+  ASMJIT_INST_3x(subp, Subp, Gp, Gp, Gp)
+  ASMJIT_INST_3x(subps, Subps, Gp, Gp, Gp)
+  ASMJIT_INST_4x(subg, Subg, Gp, Gp, Imm, Imm)
+  ASMJIT_INST_2x(st2g, St2g, Gp, Mem)
+  ASMJIT_INST_2x(stg, Stg, Gp, Mem)
+  ASMJIT_INST_3x(stgp, Stgp, Gp, Gp, Mem)
+  ASMJIT_INST_2x(stzg, Stzg, Gp, Mem)
+  ASMJIT_INST_2x(stz2g, Stz2g, Gp, Mem)
+
+  //! \}
+
+  //! \name MTE2 Instructions
+  //! \{
+
+  ASMJIT_INST_2x(ldgm, Ldgm, Gp, Mem)
+  ASMJIT_INST_2x(stgm, Stgm, Gp, Mem)
+  ASMJIT_INST_2x(stzgm, Stzgm, Gp, Mem)
+
+  //! \}
+
+  //! \name PAUTH Instructions
+  //! \{
+
   ASMJIT_INST_2x(autda, Autda, Gp, Gp)
   ASMJIT_INST_2x(autdb, Autdb, Gp, Gp)
   ASMJIT_INST_1x(autdza, Autdza, Gp)
@@ -719,13 +746,16 @@ struct EmitterExplicitT {
   ASMJIT_INST_1x(autiza, Autiza, Gp)
   ASMJIT_INST_1x(autizb, Autizb, Gp)
 
-  ASMJIT_INST_3x(gmi, Gmi, Gp, Gp, Gp)
+  ASMJIT_INST_2x(blraa, Blraa, Gp, Gp)
+  ASMJIT_INST_1x(blraaz, Blraaz, Gp)
+  ASMJIT_INST_2x(blrab, Blrab, Gp, Gp)
+  ASMJIT_INST_1x(blrabz, Blrabz, Gp)
 
-  ASMJIT_INST_2x(cmpp, Cmpp, Gp, Gp)
-  ASMJIT_INST_4x(addg, Addg, Gp, Gp, Imm, Imm)
+  ASMJIT_INST_2x(braa, Braa, Gp, Gp)
+  ASMJIT_INST_1x(braaz, Braaz, Gp)
+  ASMJIT_INST_2x(brab, Brab, Gp, Gp)
+  ASMJIT_INST_1x(brabz, Brabz, Gp)
 
-  ASMJIT_INST_2x(ldg, Ldg, Gp, Mem)
-  ASMJIT_INST_2x(ldgm, Ldgm, Gp, Mem)
   ASMJIT_INST_2x(ldraa, Ldraa, Gp, Mem)
   ASMJIT_INST_2x(ldrab, Ldrab, Gp, Mem)
 
@@ -735,17 +765,19 @@ struct EmitterExplicitT {
   ASMJIT_INST_1x(pacdzb, Pacdzb, Gp)
   ASMJIT_INST_3x(pacga, Pacga, Gp, Gp, Gp)
 
-  ASMJIT_INST_3x(subp, Subp, Gp, Gp, Gp)
-  ASMJIT_INST_3x(subps, Subps, Gp, Gp, Gp)
-  ASMJIT_INST_4x(subg, Subg, Gp, Gp, Imm, Imm)
+  ASMJIT_INST_2x(pacia, Pacia, Gp, Gp)
+  ASMJIT_INST_0x(pacia1716, Pacia1716)
+  ASMJIT_INST_0x(paciasp, Paciasp)
+  ASMJIT_INST_0x(paciaz, Paciaz)
+  ASMJIT_INST_2x(pacib, Pacib, Gp, Gp)
+  ASMJIT_INST_0x(pacib1716, Pacib1716)
+  ASMJIT_INST_0x(pacibsp, Pacibsp)
+  ASMJIT_INST_0x(pacibz, Pacibz)
+  ASMJIT_INST_1x(paciza, Paciza, Gp)
+  ASMJIT_INST_1x(pacizb, Pacizb, Gp)
 
-  ASMJIT_INST_2x(st2g, St2g, Gp, Mem)
-  ASMJIT_INST_2x(stg, Stg, Gp, Mem)
-  ASMJIT_INST_3x(stgp, Stgp, Gp, Gp, Mem)
-  ASMJIT_INST_2x(stgm, Stgm, Gp, Mem)
-  ASMJIT_INST_2x(stzg, Stzg, Gp, Mem)
-  ASMJIT_INST_2x(stz2g, Stz2g, Gp, Mem)
-  ASMJIT_INST_2x(stzgm, Stzgm, Gp, Mem)
+  ASMJIT_INST_0x(retaa, Retaa)
+  ASMJIT_INST_0x(retab, Retab)
 
   ASMJIT_INST_1x(xpacd, Xpacd, Gp)
   ASMJIT_INST_1x(xpaci, Xpaci, Gp)

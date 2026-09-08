@@ -49,6 +49,22 @@ static const RegMask ra_consecutive_lead_count_to_reg_mask_filter[5] = {
   0x1FFFFFFFu  // [4] 4 consecutive registers.
 };
 
+static constexpr uint8_t kPAuthInvalidKey = 0xFFu;
+
+static const uint8_t pauth_key_translation_aarch64_table[] = {
+  uint8_t(PAuthKey::kNone),
+
+  uint8_t(PAuthKey::kAArch64ASIA),
+  uint8_t(PAuthKey::kAArch64ASIB),
+  uint8_t(PAuthKey::kAArch64ASDA),
+  uint8_t(PAuthKey::kAArch64ASDB),
+
+  uint8_t(PAuthKey::kAArch64ProcessIndependentCode),  // <- kFuncPtr
+  uint8_t(PAuthKey::kAArch64ProcessDependentCode),    // <- kRetAddr
+  uint8_t(kPAuthInvalidKey),                          // <- kFramePtr
+  uint8_t(PAuthKey::kAArch64ProcessIndependentData)   // <- kVTablePtr
+};
+
 [[nodiscard]]
 static inline RATiedFlags ra_use_out_flags_from_rw_flags(OpRWFlags rw_flags) noexcept {
   static constexpr RATiedFlags map[] = {
@@ -368,14 +384,16 @@ Error RACFGBuilder::on_before_invoke(InvokeNode* invoke_node) noexcept {
   for (uint32_t arg_index = 0; arg_index < arg_count; arg_index++) {
     const FuncValuePack& arg_pack = fd.arg_pack(arg_index);
     for (uint32_t value_index = 0; value_index < Globals::kMaxValuePack; value_index++) {
-      if (!arg_pack[value_index])
+      if (!arg_pack[value_index]) {
         break;
+      }
 
       const FuncValue& arg = arg_pack[value_index];
       const Operand& op = invoke_node->arg(arg_index, value_index);
 
-      if (op.is_none())
+      if (op.is_none()) {
         continue;
+      }
 
       if (op.is_reg()) {
         const Reg& reg = op.as<Reg>();
@@ -440,6 +458,39 @@ Error RACFGBuilder::on_before_invoke(InvokeNode* invoke_node) noexcept {
   _cur_block->add_flags(RABlockFlags::kHasFuncCalls);
   _pass.func()->frame().add_attributes(FuncAttributes::kHasFuncCalls);
   _pass.func()->frame().update_call_stack_size(fd.arg_stack_size());
+
+  // Decide which instruction to use - AArch64 provides different instructions for relative/indirect calls.
+  // In addition, if the function invocation uses PAUTH, patch the instruction to the correct BLRxxx id.
+  if (invoke_node->op(0).is_reg()) {
+    InstId inst_id = Inst::kIdBlr;
+
+    if (invoke_node->has_authentication()) {
+      if (_pass.func()->frame().has_attribute(FuncAttributes::kPtrAuth)) {
+        uint8_t key = pauth_key_translation_aarch64_table[size_t(invoke_node->pauth_key())];
+        switch (key) {
+          case uint8_t(PAuthKey::kNone): {
+            break;
+          }
+
+          case uint8_t(PAuthKey::kAArch64ASIA): {
+            inst_id = Inst::kIdBlraaz;
+            break;
+          }
+
+          case uint8_t(PAuthKey::kAArch64ASIB): {
+            inst_id = Inst::kIdBlrabz;
+            break;
+          }
+
+          default: {
+            return make_error(Error::kInvalidPtrAuth);
+          }
+        }
+      }
+    }
+
+    invoke_node->set_inst_id(inst_id);
+  }
 
   return Error::kOk;
 }
@@ -660,11 +711,13 @@ void ARMRAPass::on_init() noexcept {
   // make unavailable all registers that are special and cannot be used in general.
   bool has_preserved_fp = frame.has_preserved_fp();
 
-  // Apple ABI requires that the frame-pointer register is not changed by leaf functions and properly updated
-  // by non-leaf functions. So, let's make this register unavailable as it's just not safe to update it.
+  // Apple ABI requires that the frame-pointer register describes a valid frame chain. This means that we cannot
+  // generally use it as a register regardless of leaf/non-leaf function and regardless of using/not-using a frame
+  // pointer.
   if (has_preserved_fp || cc().environment().is_darwin_abi()) {
     make_unavailable(RegGroup::kGp, Gp::kIdFp);
   }
+
   make_unavailable(RegGroup::kGp, Gp::kIdSp);
   make_unavailable(RegGroup::kGp, Gp::kIdOs); // OS-specific use, usually TLS.
   make_unavailable(frame._unavailable_regs);

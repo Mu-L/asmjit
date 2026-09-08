@@ -24,6 +24,16 @@ static inline bool should_treat_as_cdecl(CallConvId call_conv_id) noexcept {
          call_conv_id == CallConvId::kRegParm3;
 }
 
+static inline CallConvStrategy strategy_from_abi(PlatformABI abi) noexcept {
+  switch (abi) {
+    case PlatformABI::kDarwin:
+    case PlatformABI::kDarwinARM64E:
+      return CallConvStrategy::kAArch64Apple;
+    default:
+      return CallConvStrategy::kDefault;
+  }
+}
+
 static RegType reg_type_from_fp_or_vec_type_id(TypeId type_id) noexcept {
   if (type_id == TypeId::kFloat32) {
     return RegType::kVec32;
@@ -47,7 +57,11 @@ static RegType reg_type_from_fp_or_vec_type_id(TypeId type_id) noexcept {
 
 ASMJIT_FAVOR_SIZE Error init_call_conv(CallConv& cc, CallConvId call_conv_id, const Environment& environment) noexcept {
   cc.set_arch(environment.arch());
-  cc.set_strategy(environment.is_darwin_abi() ? CallConvStrategy::kAArch64Apple : CallConvStrategy::kDefault);
+  cc.set_strategy(strategy_from_abi(environment.platform_abi()));
+
+  if (environment.is_arm64e_abi()) {
+    cc.add_flags(CallConvFlags::kPtrAuth);
+  }
 
   cc.set_save_restore_reg_size(RegGroup::kGp, 8);
   cc.set_save_restore_reg_size(RegGroup::kVec, 8);
@@ -197,8 +211,9 @@ ASMJIT_FAVOR_SIZE Error init_func_detail(FuncDetail& func, const FuncSignature& 
       break;
     }
 
-    default:
+    default: {
       return make_error(Error::kInvalidState);
+    }
   }
 
   func._arg_stack_size = axl::align_up(stack_offset, 8u);

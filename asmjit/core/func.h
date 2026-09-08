@@ -136,7 +136,9 @@ enum class CallConvFlags : uint32_t {
   //! MMX registers are passed and returned via XMM registers.
   kPassMmxByXmm = 0x0020u,
   //! Calling convention can be used with variable arguments.
-  kVarArgCompatible = 0x0080u
+  kVarArgCompatible = 0x0080u,
+  //! Enforce pointer authentication.
+  kPtrAuth = 0x0100u
 };
 ASMJIT_DEFINE_ENUM_FLAGS(CallConvFlags)
 
@@ -846,6 +848,15 @@ enum class FuncAttributes : uint32_t {
   kIndirectBranchProtection = 0x00000080u,
   //! FuncFrame is finalized and can be used by prolog/epilog inserter (PEI).
   kIsFinalized = 0x00000800u,
+
+  //  Attributes
+  // ----------------
+
+  //! Prolog & Epilog sequence must match Apple ABI requirements (AArch64).
+  kAppleABI = 0x00010000u,
+
+  //! Enforce pointer authentication - influences prolog, epilog, jumps, and subroutine calls (AArch64).
+  kPtrAuth = 0x00002000u,
 
   // X86 Specific Attributes
   // -----------------------

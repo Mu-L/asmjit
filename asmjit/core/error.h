@@ -38,7 +38,7 @@ enum class Error : uint32_t {
   //! Invalid or incompatible architecture.
   kInvalidArch,
 
-  //! Invalid data.
+  //! Invalid token (parsing).
   kInvalidToken,
 
   //! Truncated data (incomplete input or data).
@@ -148,6 +148,9 @@ enum class Error : uint32_t {
 
   //! Invalid immediate (out of bounds on X86 and invalid pattern on ARM).
   kInvalidImmediate,
+
+  //! Invalid pointer authentication data.
+  kInvalidPtrAuth,
 
   //! Invalid operand size.
   kInvalidOperandSize,

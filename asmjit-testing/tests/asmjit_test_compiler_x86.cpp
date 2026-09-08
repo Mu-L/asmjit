@@ -560,7 +560,7 @@ public:
   X86Test_JumpTable1(bool annotated)
     : X86TestCase("X86Test_JumpTable1"),
       _annotated(annotated) {
-    _name.assign_format("JumpTable {%s}", annotated ? "Annotated" : "Unknown Reg/Mem");
+    _name.assign_format("JumpTable {%s}", annotated ? "Annotated" : "Not Annotated");
   }
 
   enum Operator {

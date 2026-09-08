@@ -9,6 +9,7 @@
 #include <asmjit/axl/inplace_array.h>
 #include <asmjit/core/globals.h>
 #include <asmjit/core/os_utils_p.h>
+#include <asmjit/core/pauth_utils_p.h>
 #include <asmjit/core/string.h>
 #include <asmjit/core/virt_mem.h>
 
@@ -853,6 +854,10 @@ static HardenedRuntimeFlags get_hardened_runtime_flags() noexcept {
   if (has_dual_mapping_support()) {
     flags |= HardenedRuntimeFlags::kDualMapping;
   }
+
+#if defined(__APPLE__) && defined(__arm64e__)
+  flags |= HardenedRuntimeFlags::kPtrAuth;
+#endif
 
   return flags;
 }
