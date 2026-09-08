@@ -291,6 +291,102 @@ public:
   }
 };
 
+// BitVectorRangeIterator
+// ======================
+
+template<typename T, uint32_t B>
+class BitVectorRangeIterator {
+public:
+  const T* _ptr;
+  size_t _idx;
+  size_t _end;
+  T _bit_word;
+
+  static inline constexpr uint32_t kBitWordSize = axl::bit_size_of<T>;
+  static inline constexpr T kOnes = axl::bit_ones<T>;
+  static inline constexpr T kXorMask = B == 0 ? kOnes : T(0);
+
+  ASMJIT_INLINE BitVectorRangeIterator(const T* data, size_t bit_word_count) noexcept {
+    init(data, bit_word_count);
+  }
+
+  ASMJIT_INLINE BitVectorRangeIterator(const T* data, size_t bit_word_count, size_t start, size_t end) noexcept {
+    init(data, bit_word_count, start, end);
+  }
+
+  ASMJIT_INLINE void init(const T* data, size_t bit_word_count) noexcept {
+    init(data, bit_word_count, 0, bit_word_count * kBitWordSize);
+  }
+
+  ASMJIT_INLINE void init(const T* data, size_t bit_word_count, size_t start, size_t end) noexcept {
+    ASMJIT_ASSERT(bit_word_count >= (end + kBitWordSize - 1) / kBitWordSize);
+    axl::maybe_unused(bit_word_count);
+
+    size_t idx = axl::align_down(start, kBitWordSize);
+    const T* ptr = data + (idx / kBitWordSize);
+
+    T bit_word = 0;
+    if (idx < end) {
+      bit_word = (*ptr ^ kXorMask) & (kOnes << (start % kBitWordSize));
+    }
+
+    _ptr = ptr;
+    _idx = idx;
+    _end = end;
+    _bit_word = bit_word;
+  }
+
+  ASMJIT_INLINE bool next_range(Out<size_t> range_start, Out<size_t> range_end, size_t range_hint = max_value<size_t>()) noexcept {
+    // Skip all empty BitWords.
+    while (_bit_word == 0) {
+      _idx += kBitWordSize;
+      if (_idx >= _end) {
+        return false;
+      }
+      _bit_word = (*++_ptr) ^ kXorMask;
+    }
+
+    size_t start = _idx + axl::ctz(_bit_word);
+    if (start >= _end) {
+      return false;
+    }
+
+    *range_start = start;
+    _bit_word = ~(_bit_word ^ ~(shl_wrap(kOnes, start)));
+
+    if (_bit_word == 0) {
+      *range_end = axl::min(_idx + kBitWordSize, _end);
+      while (*range_end - *range_start < range_hint) {
+        _idx += kBitWordSize;
+        if (_idx >= _end) {
+          break;
+        }
+
+        _bit_word = (*++_ptr) ^ kXorMask;
+        if (_bit_word != kOnes) {
+          size_t j = axl::ctz(~_bit_word);
+          *range_end = axl::min(_idx + j, _end);
+          _bit_word = _bit_word ^ ~(kOnes << j);
+          break;
+        }
+
+        *range_end = axl::min(_idx + kBitWordSize, _end);
+        _bit_word = 0;
+        continue;
+      }
+
+      return true;
+    }
+    else {
+      size_t j = axl::ctz(_bit_word);
+      *range_end = axl::min(_idx + j, _end);
+
+      _bit_word = ~(_bit_word ^ ~(kOnes << j));
+      return true;
+    }
+  }
+};
+
 //! \}
 
 ASMJIT_END_SUB_NAMESPACE

@@ -230,6 +230,77 @@ TEST_CASE(axl_bit_set_utils) {
   }
 }
 
+struct TestRange {
+  size_t a, b;
+};
+
+template<typename T, uint32_t B>
+static void verify_range_iterator(const T* data, size_t size, const TestRange* expected_ranges, size_t expected_count) {
+  axl::BitVectorRangeIterator<T, B> it(data, size);
+  size_t expected_index = 0;
+
+  TestRange found;
+  while (it.next_range(Out(found.a), Out(found.b))) {
+    EXPECT_LT(expected_index, expected_count);
+
+    size_t expected_a = expected_ranges[expected_index].a;
+    size_t expected_b = expected_ranges[expected_index].b;
+
+    EXPECT_TRUE(found.a == expected_a && found.b == expected_b)
+      .message("invalid range - found {%zu, %zu}, expected {%zu, %zu}", found.a, found.b, expected_a, expected_b);
+    expected_index++;
+  }
+
+  EXPECT_EQ(expected_index, expected_count)
+    .message("BitVectorRangeIterator failed to find all ranges (found %zu, expected %zu)", expected_index, expected_count);
+}
+
+TEST_CASE(axl_bit_set_range_iterator) {
+  {
+    uint32_t bits[] = {0};
+    TestRange expected_0[] = {{0, 32}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), expected_0, ASMJIT_ARRAY_SIZE(expected_0));
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), nullptr, 0);
+  }
+
+  {
+    uint32_t bits[] = {0xFFFFFFFFu};
+    TestRange expected_1[] = {{0, 32}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), nullptr, 0);
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), expected_1, ASMJIT_ARRAY_SIZE(expected_1));
+  }
+
+  {
+    uint32_t bits[] = {0, 0, 0, 0};
+    TestRange expected_0[] = {{0, 128}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), expected_0, ASMJIT_ARRAY_SIZE(expected_0));
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), nullptr, 0);
+  }
+
+  {
+    uint32_t bits[] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
+    TestRange expected_1[] = {{0, 128}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), nullptr, 0);
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), expected_1, ASMJIT_ARRAY_SIZE(expected_1));
+  }
+
+  {
+    uint32_t bits[] = {0x30FF00FFu};
+    TestRange expected_0[] = {{8, 16}, {24, 28}, {30, 32}};
+    TestRange expected_1[] = {{0, 8}, {16, 24}, {28, 30}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), expected_0, ASMJIT_ARRAY_SIZE(expected_0));
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), expected_1, ASMJIT_ARRAY_SIZE(expected_1));
+  }
+
+  {
+    uint32_t bits[] = {0, 0x30FF00FF, 0};
+    TestRange expected_0[] = {{0, 32}, {40, 48}, {56, 60}, {62, 96}};
+    TestRange expected_1[] = {{32, 40}, {48, 56}, {60, 62}};
+    verify_range_iterator<uint32_t, 0>(bits, ASMJIT_ARRAY_SIZE(bits), expected_0, ASMJIT_ARRAY_SIZE(expected_0));
+    verify_range_iterator<uint32_t, 1>(bits, ASMJIT_ARRAY_SIZE(bits), expected_1, ASMJIT_ARRAY_SIZE(expected_1));
+  }
+}
+
 ASMJIT_END_NAMESPACE
 
 #endif // ASMJIT_TEST
